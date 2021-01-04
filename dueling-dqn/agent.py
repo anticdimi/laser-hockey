@@ -3,7 +3,6 @@ import copy
 import numpy as np
 from feedforward_duel import QFunction
 import time
-from collections import defaultdict
 
 
 class DQNAgent(object):
@@ -12,7 +11,7 @@ class DQNAgent(object):
 
     Parameters
     ----------
-    opponent : object
+    opponent: object
         The variable the agent that is used as an opponent during training/evaluation.
     obs_space: object
         The variable specifies the observation space of the environment.
@@ -47,9 +46,9 @@ class DQNAgent(object):
                 'factor_neutral_result': -0.02,
             },
             'defense': {
-                'factor_closeness': 130,
-                'factor_outcome': 10,
-                'factor_existence': 2,
+                'closeness': 130,
+                'outcome': 30,
+                'existence': 1,
                 'factor_touch': 200,
             },
             'normal': {},
@@ -68,11 +67,15 @@ class DQNAgent(object):
 
         self.buffer = mem.Memory(max_size=self._config['buffer_size'])
 
+        milestones = np.arange(start=0,
+                               stop=self._config['max_episodes'] + 1,
+                               step=self._config['change_lr_every'])[1:]
         self.Q = QFunction(
             self._observation_space.shape[0],
             len(self.CUSTOM_DISCRETE_ACTIONS),
             hidden_sizes=self._config['hidden_sizes'],
             learning_rate=self._config['learning_rate'],
+            lr_milestones=milestones,
             device=self._config['device'],
         )
 
@@ -160,141 +163,32 @@ class DQNAgent(object):
     def _defense_reward(
         self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched
     ):
-        factors = self._factors[self._config['mode']]
+        constants = self._factors[self._config['mode']]
 
         reward_dict = {}
 
         if (1 <= env.player1.position[0] <= 2.5) and (2 <= env.player1.position[1] <= 6):
-            reward_dict['existence-reward'] = 1
+            reward_dict['existence-reward'] = constants['existence']
         else:
-            reward_dict['existence-reward'] = -1
+            reward_dict['existence-reward'] = (-1) * constants['existence']
 
         if reward_puck_direction < 0:
-            reward_dict['closeness-reward'] = 130 * reward_closeness_to_puck
+            reward_dict['closeness-reward'] = constants['closeness'] * reward_closeness_to_puck
 
         if env.done:
             if env.winner == -1:
-                reward_dict['outcome-reward'] = -25
+                reward_dict['outcome-reward'] = (-1) * constants['outcome'] + 5
             elif env.winner == 0:
-                reward_dict['outcome-reward'] = 30
+                reward_dict['outcome-reward'] = constants['outcome']
 
         return reward_dict
 
-    def train_in_env(self, env, evaluate, action_mapping):
-        epsilon = self._config['epsilon']
-        epsilon_decay = self._config['epsilon_decay']
-        min_epsilon = self._config['min_epsilon']
-        episode_counter = 0
-
-        rew_stats = []
-        loss_stats = []
-        lost_stats = {}
-        touch_stats = {}
-        won_stats = {}
-        rewards = defaultdict(lambda: [])
-
-        while episode_counter < self._config['max_episodes']:
-            ob = env.reset()
-            obs_agent2 = env.obs_agent_two()
-
-            if (env.puck.position[0] < 5 and self._config['mode'] == 'defense') or (
-                env.puck.position[0] > 5 and self._config['mode'] == 'shooting'
-            ):
-                continue
-
-            epsilon = max(epsilon_decay * epsilon, min_epsilon)
-
-            total_reward = 0
-            touched = 0
-            touch_stats[episode_counter] = 0
-            won_stats[episode_counter] = 0
-            lost_stats[episode_counter] = 0
-
-            for step in range(self._config['max_steps']):
-                a1 = self.act(ob, eps=epsilon)
-                a1_discrete = action_mapping(a1)
-
-                if self._config['mode'] == 'defense':
-                    a2 = self.opponent.act(obs_agent2)
-                elif self._config['mode'] == 'shooting':
-                    a2 = [0, 0, 0, 0]
-                else:
-                    raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
-
-                (ob_new, reward, done, _info) = env.step(np.hstack([a1_discrete, a2]))
-                touched = max(touched, _info['reward_touch_puck'])
-
-                reward_dict = self.reward_function(
-                    env,
-                    reward_game_outcome=reward,
-                    reward_closeness_to_puck=_info['reward_closeness_to_puck'],
-                    reward_touch_puck=_info['reward_touch_puck'],
-                    reward_puck_direction=_info['reward_puck_direction'],
-                    touched=touched,
-                )
-
-                for reward_type, reward_value in reward_dict.items():
-                    rewards[reward_type].append(reward_value)
-
-                summed_reward = sum(list(reward_dict.values()))
-                total_reward += summed_reward
-                self.store_transition((ob, a1, summed_reward, ob_new, done))
-
-                if self._config['show']:
-                    time.sleep(0.01)
-                    env.render()
-
-                if touched > 0:
-                    touch_stats[episode_counter] = 1
-
-                if done:
-                    won_stats[episode_counter] = 1 if env.winner == 1 else 0
-                    lost_stats[episode_counter] = 1 if env.winner == -1 else 0
-                    break
-
-                ob = ob_new
-                obs_agent2 = env.obs_agent_two()
-
-            loss_stats.extend(self._train(episode_number=episode_counter, iter_fit=self._config['iter_fit']))
-            rew_stats.append(total_reward)
-
-            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon)
-
-            episode_counter += 1
-
-        if self._config['show']:
-            env.close()
-
-        # Print train stats
-        self.logger.print_stats(rew_stats, touch_stats, won_stats, lost_stats)
-
-        # Plot reward
-        self.logger.plot_running_mean(rew_stats, 'Total reward', 'total-reward.pdf', show=False)
-
-        # Plot loss
-        self.logger.plot_running_mean(loss_stats, 'Loss', 'loss.pdf', show=False)
-
-        # Save model
-        self.logger.save_model(self, 'agent.pkl')
-
-        # Log rew histograms
-        self.logger.clean_rew_dir()
-        for reward_type, reward_values in rewards.items():
-            self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
-
-        if evaluate:
-            self._config['show'] = True
-            self.evaluate(env, self._config['eval_episodes'], action_mapping)
-
-    def _train(self, episode_number, iter_fit=20):
+    def _train(self, episode_number):
         if self._config['update_target']:
             self.update_target_net()
 
-        if self._config['halve_lr'] and (episode_number % self._config['halve_lr_every'] == 0):
-            self.Q.halve_learning_rate()
-
         losses = []
-        for i in range(iter_fit):
+        for i in range(self._config['iter_fit']):
             data = self.buffer.sample(batch=self._config['batch_size'])
             s = np.stack(data[:, 0])  # s_t
             a = np.stack(data[:, 1])[:, None]  # a_t
@@ -308,4 +202,7 @@ class DQNAgent(object):
             # optimize
             fit_loss = self.Q.fit(s, a, targets)
             losses.append(fit_loss)
+
+        self.Q.lr_scheduler.step()
+
         return losses
