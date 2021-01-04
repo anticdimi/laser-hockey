@@ -3,9 +3,9 @@ import numpy as np
 import time
 
 
-class Trainer:
+class DQNTrainer:
     """
-    The Trainer class implements a trainer for the DQNAgent.
+    The DQNTrainer class implements a trainer for the DQNAgent.
 
     Parameters
     ----------

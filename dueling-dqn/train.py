@@ -7,7 +7,7 @@ from importlib import reload
 from argparse import ArgumentParser
 import sys
 from custom_action_space import custom_discrete_to_continuous_action, CUSTOM_DISCRETE_ACTIONS
-from trainer import Trainer
+from trainer import DQNTrainer
 
 # TODO: fix if possible, not the best way of importing
 sys.path.insert(0, '.')
@@ -61,5 +61,5 @@ if __name__ == '__main__':
                        CUSTOM_DISCRETE_ACTIONS,
                        logger,
                        **vars(opts))
-    trainer = Trainer(logger, vars(opts))
+    trainer = DQNTrainer(logger, vars(opts))
     trainer.train(q_agent, env, opts.evaluate, custom_discrete_to_continuous_action)
