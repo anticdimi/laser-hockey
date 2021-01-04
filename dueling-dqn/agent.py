@@ -77,6 +77,7 @@ class DQNAgent(object):
             learning_rate=self._config['learning_rate'],
             lr_milestones=milestones,
             device=self._config['device'],
+            dueling=self._config['dueling']
         )
 
         self.target_Q = copy.deepcopy(self.Q)

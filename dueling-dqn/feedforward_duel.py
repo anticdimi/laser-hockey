@@ -2,7 +2,7 @@ import torch
 import numpy as np
 
 
-class FeedforwardDuel(torch.nn.Module):
+class Feedforward(torch.nn.Module):
     """
     The FeedforwardDuel class implements Dueling architecture of DQN.
 
@@ -12,21 +12,28 @@ class FeedforwardDuel(torch.nn.Module):
         The variable specifies the input shape of the network.
     hidden_sizes: list
         The variable specifies the width of the hidden layers.
-    device: str
+    device: torch.device
         The variable specifies on which device the network is evaluated.
+    dueling: bool
+        The variable specifies whether or not the architecture should implement a Dueling DQN.
     """
 
-    def __init__(self, input_size, hidden_sizes, output_size, device):
-        super(FeedforwardDuel, self).__init__()
+    def __init__(self, input_size, hidden_sizes, output_size, device, dueling):
+        super(Feedforward, self).__init__()
         self.input_size = input_size
         self.hidden_sizes = hidden_sizes
         self.output_size = output_size
+        self.dueling = dueling
+        self.device = device
         layer_sizes = [self.input_size] + self.hidden_sizes
         self.layers = torch.nn.ModuleList([torch.nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
         self.activations = [torch.nn.Tanh() for l in self.layers]
-        self.A = torch.nn.Linear(self.hidden_sizes[-1], self.output_size)
-        self.V = torch.nn.Linear(self.hidden_sizes[-1], 1)
-        self.device = device
+
+        if dueling:
+            self.A = torch.nn.Linear(self.hidden_sizes[-1], self.output_size)
+            self.V = torch.nn.Linear(self.hidden_sizes[-1], 1)
+        else:
+            self.Q = torch.nn.Linear(self.hidden_sizes[-1], self.output_size)
 
     def forward(self, x):
         if self.device.type == 'cuda' and x.device.type != 'cuda':
@@ -35,10 +42,13 @@ class FeedforwardDuel(torch.nn.Module):
         for layer, activation_fun in zip(self.layers, self.activations):
             x = activation_fun(layer(x))
 
-        A = self.A(x)
-        V = self.V(x)
+        if self.dueling:
+            A = self.A(x)
+            V = self.V(x)
+            Q = torch.add(V, (A - A.mean(dim=-1, keepdim=True)))
+        else:
+            Q = self.Q(x)
 
-        Q = torch.add(V, (A - A.mean(dim=-1, keepdim=True)))
         return Q
 
     def predict(self, x):
@@ -46,7 +56,7 @@ class FeedforwardDuel(torch.nn.Module):
             return self.forward(torch.from_numpy(x.astype(np.float32)).to(self.device)).cpu().numpy()
 
 
-class QFunction(FeedforwardDuel):
+class QFunction(Feedforward):
     """
     The FeedforwardDuel class implements Dueling architecture of DQN.
 
@@ -58,16 +68,23 @@ class QFunction(FeedforwardDuel):
         The variable specifies the size of the action vector.
     hidden_sizes: list
         The variable specifies the width of the hidden layers.
+    device: torch.device
+        The variable specifies on which device the network is evaluated.
+    dueling: bool
+        The variable specifies whether or not the architecture should implement a Dueling DQN.
     learning_rate: float
         The variable specifies the learning rate for neural net.
+    lr_milestones: Iterable
+        The variable specifies
     """
 
-    def __init__(self, observation_dim, action_dim, device, hidden_sizes, learning_rate, lr_milestones):
+    def __init__(self, observation_dim, action_dim, device, hidden_sizes, dueling, learning_rate, lr_milestones):
         super().__init__(
             input_size=observation_dim,
             hidden_sizes=hidden_sizes,
             output_size=action_dim,
             device=device,
+            dueling=dueling
         )
         if device.type == 'cuda':
             self.cuda()
