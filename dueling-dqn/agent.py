@@ -183,7 +183,7 @@ class DQNAgent(object):
 
         return reward_dict
 
-    def _train(self, episode_number):
+    def train(self):
         if self._config['update_target']:
             self.update_target_net()
 
