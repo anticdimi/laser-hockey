@@ -7,6 +7,7 @@ from importlib import reload
 from argparse import ArgumentParser
 import sys
 from custom_action_space import custom_discrete_to_continuous_action, CUSTOM_DISCRETE_ACTIONS
+from trainer import Trainer
 
 # TODO: fix if possible, not the best way of importing
 sys.path.insert(0, '.')
@@ -25,8 +26,8 @@ parser.add_argument('--mode', help='Mode for training currently: (shooting | def
 parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=5000)
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=160)
 parser.add_argument('--iter_fit', help='Iter fit', type=int, default=32)
-parser.add_argument('--halve_lr', help='Schedule halving of the learning rate', action='store_true', default=True)
-parser.add_argument('--halve_lr_every', help='Halve learning rate every # of episodes', type=int, default=1000)
+parser.add_argument('--change_lr', help='Schedule change of the learning rate', action='store_true', default=True)
+parser.add_argument('--change_lr_every', help='Change learning rate every # of episodes', type=int, default=10)
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.0001)
 parser.add_argument('--discount', help='Discount', type=float, default=0.95)
@@ -60,5 +61,5 @@ if __name__ == '__main__':
                        CUSTOM_DISCRETE_ACTIONS,
                        logger,
                        **vars(opts))
-
-    q_agent.train_in_env(env, opts.evaluate, custom_discrete_to_continuous_action)
+    trainer = Trainer(logger, vars(opts))
+    trainer.train(q_agent, env, opts.evaluate, custom_discrete_to_continuous_action)

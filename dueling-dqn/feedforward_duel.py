@@ -62,7 +62,7 @@ class QFunction(FeedforwardDuel):
         The variable specifies the learning rate for neural net.
     """
 
-    def __init__(self, observation_dim, action_dim, device, hidden_sizes, learning_rate):
+    def __init__(self, observation_dim, action_dim, device, hidden_sizes, learning_rate, lr_milestones):
         super().__init__(
             input_size=observation_dim,
             hidden_sizes=hidden_sizes,
@@ -72,7 +72,11 @@ class QFunction(FeedforwardDuel):
         if device.type == 'cuda':
             self.cuda()
         self.learning_rate = learning_rate
+        self.lr_milestones = lr_milestones
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, eps=0.000001)
+        self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            self.optimizer, milestones=lr_milestones, gamma=0.5
+        )
         self.loss = torch.nn.SmoothL1Loss()
 
     def fit(self, observations, actions, targets):
@@ -97,8 +101,3 @@ class QFunction(FeedforwardDuel):
     def greedyAction(self, observations):
         # this computes the greedy action
         return np.argmax(self.predict(observations), axis=-1)
-
-    def halve_learning_rate(self):
-        # Method to halve learning rate (leading to better convergence)
-        self.learning_rate /= 2
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, eps=0.000001)
