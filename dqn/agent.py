@@ -1,7 +1,7 @@
 import memory as mem
 import copy
 import numpy as np
-from feedforward_duel import QFunction
+from feedforward import QFunction
 import time
 
 
@@ -18,9 +18,9 @@ class DQNAgent(object):
     logger: Logger
         The variable specifies a logger for model management, plotting and printing.
     CUSTOM_DISCRETE_ACTIONS: list
-        This variable specifies a custom action space
+        The variable specifies a custom action space
     **userconfig:
-        This variable specifies the config settings.
+        The variable specifies the config settings.
     """
 
     def __init__(self, opponent, obs_space, CUSTOM_DISCRETE_ACTIONS, logger, **userconfig):
