@@ -94,7 +94,7 @@ class DQNTrainer:
                 ob = ob_new
                 obs_agent2 = env.obs_agent_two()
 
-            loss_stats.extend(agent._train(episode_number=episode_counter))
+            loss_stats.extend(agent.train())
             rew_stats.append(total_reward)
 
             self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon)

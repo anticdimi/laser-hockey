@@ -27,13 +27,14 @@ parser.add_argument('--max_episodes', help='Max episodes for training', type=int
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=160)
 parser.add_argument('--iter_fit', help='Iter fit', type=int, default=32)
 parser.add_argument('--change_lr', help='Schedule change of the learning rate', action='store_true', default=True)
-parser.add_argument('--change_lr_every', help='Change learning rate every # of episodes', type=int, default=10)
+parser.add_argument('--change_lr_every', help='Change learning rate every # of episodes', type=int, default=1000)
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.0001)
 parser.add_argument('--discount', help='Discount', type=float, default=0.95)
 parser.add_argument('--epsilon', help='Epsilon', type=float, default=0.95)
 parser.add_argument('--epsilon_decay', help='Epsilon decay', type=float, default=0.9987)
 parser.add_argument('--min_epsilon', help='min_epsilon', type=float, default=0.07)
+parser.add_argument('--double', help='Calculate target with Double DQN', action='store_true')
 
 opts = parser.parse_args()
 
