@@ -196,7 +196,12 @@ class DQNAgent(object):
             s_next = np.stack(data[:, 3])  # s_t+1
             not_done = (~np.stack(data[:, 4])[:, None]).astype(np.int)  # not_done flag
 
-            value_s_next = self.target_Q.maxQ(s_next)[:, None]
+            if self._config['double']:
+                greedy_actions = self.Q.greedyAction(s_next)[:, None]
+                value_s_next = self.target_Q.Q_value(s_next, greedy_actions).detach().numpy()
+            else:
+                value_s_next = self.target_Q.maxQ(s_next)[:, None]
+
             targets = rew + self._config['discount'] * np.multiply(not_done, value_s_next)
 
             # optimize
