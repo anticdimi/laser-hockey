@@ -24,6 +24,7 @@ class DQNTrainer:
         epsilon_decay = self._config['epsilon_decay']
         min_epsilon = self._config['min_epsilon']
         episode_counter = 0
+        total_step_counter = 0
 
         rew_stats = []
         loss_stats = []
@@ -51,7 +52,7 @@ class DQNTrainer:
 
             for step in range(self._config['max_steps']):
 
-                if step % self._config['update_target_every'] == 0:
+                if total_step_counter % self._config['update_target_every'] == 0:
                     agent.update_target_net()
 
                 a1 = agent.act(ob, eps=epsilon)
@@ -97,6 +98,7 @@ class DQNTrainer:
 
                 ob = ob_new
                 obs_agent2 = env.obs_agent_two()
+                total_step_counter += 1
 
             loss_stats.extend(agent.train())
             rew_stats.append(total_reward)
