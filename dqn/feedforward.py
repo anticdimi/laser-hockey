@@ -4,7 +4,7 @@ import numpy as np
 
 class Feedforward(torch.nn.Module):
     """
-    The FeedforwardDuel class implements Dueling architecture of DQN.
+    The Feedforward class implements Dueling architecture of DQN.
 
     Parameters
     ----------

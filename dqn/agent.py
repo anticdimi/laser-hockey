@@ -61,7 +61,6 @@ class DQNAgent(object):
             'buffer_size': int(1e5),
             'batch_size': 128,
             'hidden_sizes': [128],
-            'update_target': True,
         }
         self._config.update(userconfig)
 
@@ -152,12 +151,12 @@ class DQNAgent(object):
     def _shooting_reward(
         self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched=0
     ):
-        factors = self._factors[self._config['mode']]
+        constants = self._factors[self._config['mode']]
 
         reward_dict = {}
-        reward_dict['closeness-reward'] = (1 - touched) * factors['factor_closeness'] * reward_closeness_to_puck
-        reward_dict['existence-reward'] = (-1) * factors['factor_existence']
-        reward_dict['outcome-reward'] = factors['factor_outcome'] * reward_game_outcome
+        reward_dict['closeness-reward'] = (1 - touched) * constants['factor_closeness'] * reward_closeness_to_puck
+        reward_dict['existence-reward'] = (-1) * constants['factor_existence']
+        reward_dict['outcome-reward'] = constants['factor_outcome'] * reward_game_outcome
 
         return reward_dict
 
@@ -185,9 +184,6 @@ class DQNAgent(object):
         return reward_dict
 
     def train(self):
-        if self._config['update_target']:
-            self.update_target_net()
-
         losses = []
         for i in range(self._config['iter_fit']):
             data = self.buffer.sample(batch=self._config['batch_size'])
