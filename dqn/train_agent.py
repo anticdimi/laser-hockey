@@ -25,7 +25,7 @@ parser.add_argument('--mode', help='Mode for training currently: (shooting | def
 # Training params
 parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=5000)
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=160)
-parser.add_argument('--iter_fit', help='Iter fit', type=int, default=32)
+parser.add_argument('--iter_fit', help='Iter fit', type=int, default=16)
 parser.add_argument('--update_target_every', help='# of episodes between updating target net', type=int, default=500)
 parser.add_argument('--change_lr', help='Schedule change of the learning rate', action='store_true', default=True)
 parser.add_argument('--change_lr_every', help='Change learning rate every # of episodes', type=int, default=1000)

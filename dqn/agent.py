@@ -151,12 +151,12 @@ class DQNAgent(object):
     def _shooting_reward(
         self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched=0
     ):
-        factors = self._factors[self._config['mode']]
+        constants = self._factors[self._config['mode']]
 
         reward_dict = {}
-        reward_dict['closeness-reward'] = (1 - touched) * factors['factor_closeness'] * reward_closeness_to_puck
-        reward_dict['existence-reward'] = (-1) * factors['factor_existence']
-        reward_dict['outcome-reward'] = factors['factor_outcome'] * reward_game_outcome
+        reward_dict['closeness-reward'] = (1 - touched) * constants['factor_closeness'] * reward_closeness_to_puck
+        reward_dict['existence-reward'] = (-1) * constants['factor_existence']
+        reward_dict['outcome-reward'] = constants['factor_outcome'] * reward_game_outcome
 
         return reward_dict
 
