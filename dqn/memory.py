@@ -8,7 +8,7 @@ class Memory:
     Parameters
     ----------
     max_size : int
-        This variable specifies maximum number of (s, a, r, new_state, done) tuples in the buffer.
+        The variable specifies maximum number of (s, a, r, new_state, done) tuples in the buffer.
     """
 
     def __init__(self, max_size=100000):

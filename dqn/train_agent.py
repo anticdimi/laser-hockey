@@ -34,6 +34,7 @@ parser.add_argument('--discount', help='Discount', type=float, default=0.95)
 parser.add_argument('--epsilon', help='Epsilon', type=float, default=0.95)
 parser.add_argument('--epsilon_decay', help='Epsilon decay', type=float, default=0.9987)
 parser.add_argument('--min_epsilon', help='min_epsilon', type=float, default=0.07)
+parser.add_argument('--dueling', help='Specifies whether the architecture should be dueling', action='store_true')
 parser.add_argument('--double', help='Calculate target with Double DQN', action='store_true')
 
 opts = parser.parse_args()
