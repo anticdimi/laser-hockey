@@ -67,12 +67,12 @@ class DQNAgent(object):
         self.buffer = mem.Memory(max_size=self._config['buffer_size'])
 
         milestones = []
-        if self._config['lr_milestones'] is None:
+        if self._config['lr_milestones'] is not None:
+            milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
+        else:
             milestones = np.arange(start=0,
                                    stop=self._config['max_episodes'] + 1,
                                    step=self._config['change_lr_every'])[1:]
-        elif self._config['lr_milestones'] is not None:
-            milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
 
         self.Q = QFunction(
             self._observation_space.shape[0],
