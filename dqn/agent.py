@@ -66,15 +66,21 @@ class DQNAgent(object):
 
         self.buffer = mem.Memory(max_size=self._config['buffer_size'])
 
-        milestones = np.arange(start=0,
-                               stop=self._config['max_episodes'] + 1,
-                               step=self._config['change_lr_every'])[1:]
+        milestones = []
+        if self._config['lr_milestones'] is None:
+            milestones = np.arange(start=0,
+                                   stop=self._config['max_episodes'] + 1,
+                                   step=self._config['change_lr_every'])[1:]
+        elif self._config['lr_milestones'] is not None:
+            milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
+
         self.Q = QFunction(
             self._observation_space.shape[0],
             len(self.CUSTOM_DISCRETE_ACTIONS),
             hidden_sizes=self._config['hidden_sizes'],
             learning_rate=self._config['learning_rate'],
             lr_milestones=milestones,
+            lr_factor=self._config['lr_factor'],
             device=self._config['device'],
             dueling=self._config['dueling']
         )

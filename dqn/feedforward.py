@@ -74,11 +74,14 @@ class QFunction(Feedforward):
         The variable specifies whether or not the architecture should implement a Dueling DQN.
     learning_rate: float
         The variable specifies the learning rate for neural net.
+    lr_factor: float
+        The variable specifies the learning rate scaling factor for neural net.
     lr_milestones: Iterable
         The variable specifies
     """
 
-    def __init__(self, observation_dim, action_dim, device, hidden_sizes, dueling, learning_rate, lr_milestones):
+    def __init__(self, observation_dim, action_dim, device, hidden_sizes,
+                 dueling, learning_rate, lr_factor, lr_milestones):
         super().__init__(
             input_size=observation_dim,
             hidden_sizes=hidden_sizes,
@@ -90,9 +93,10 @@ class QFunction(Feedforward):
             self.cuda()
         self.learning_rate = learning_rate
         self.lr_milestones = lr_milestones
+        self.lr_factor = lr_factor
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, eps=0.000001)
         self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-            self.optimizer, milestones=lr_milestones, gamma=0.5
+            self.optimizer, milestones=lr_milestones, gamma=self.lr_factor
         )
         self.loss = torch.nn.SmoothL1Loss()
 
