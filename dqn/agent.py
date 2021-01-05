@@ -61,7 +61,6 @@ class DQNAgent(object):
             'buffer_size': int(1e5),
             'batch_size': 128,
             'hidden_sizes': [128],
-            'update_target': True,
         }
         self._config.update(userconfig)
 
@@ -185,9 +184,6 @@ class DQNAgent(object):
         return reward_dict
 
     def train(self):
-        if self._config['update_target']:
-            self.update_target_net()
-
         losses = []
         for i in range(self._config['iter_fit']):
             data = self.buffer.sample(batch=self._config['batch_size'])

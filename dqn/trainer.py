@@ -50,6 +50,10 @@ class DQNTrainer:
             lost_stats[episode_counter] = 0
 
             for step in range(self._config['max_steps']):
+
+                if step % self._config['update_target_every'] == 0:
+                    agent.update_target_net()
+
                 a1 = agent.act(ob, eps=epsilon)
                 a1_discrete = action_mapping(a1)
 
