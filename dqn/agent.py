@@ -173,7 +173,10 @@ class DQNAgent(object):
 
         reward_dict = {}
 
-        reward_dict['touch-reward'] = 10 * reward_touch_puck
+        if (1 <= env.player1.position[0] <= 2.5) and (2 <= env.player1.position[1] <= 6):
+            reward_dict['existence-reward'] = constants['existence']
+        else:
+            reward_dict['existence-reward'] = (-1) * constants['existence']
 
         if reward_puck_direction < 0:
             reward_dict['closeness-reward'] = constants['closeness'] * reward_closeness_to_puck
@@ -204,11 +207,15 @@ class DQNAgent(object):
 
             targets = rew + self._config['discount'] * np.multiply(not_done, value_s_next)
 
+            weights = np.ones(targets.shape)
+
             # optimize
-            fit_loss, pred = self.Q.fit(s, a, targets)
+            # TODO: Pass weights to scale errors
+            fit_loss, pred = self.Q.fit(s, a, targets, weights)
 
             # TODO: Update priorities based on abs(target - pred)
             # See even if the values stay in the pred vector or they are
+
             losses.append(fit_loss)
 
         self.Q.lr_scheduler.step()
