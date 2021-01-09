@@ -101,14 +101,15 @@ class QFunction(Feedforward):
         self.loss = torch.nn.SmoothL1Loss()
 
     def fit(self, observations, actions, targets):
+        self.optimizer.zero_grad()
         targets = torch.from_numpy(targets).to(self.device).float()
         pred = self.Q_value(observations, actions)
         loss = self.loss(pred, targets)
         loss.backward()
         for param in self.parameters():
-            param.grad.data.clamp_(-1, 1)
+            param.grad.data.clamp_(-10, 10)
         self.optimizer.step()
-        return loss.item()
+        return loss.item(), pred.detach().numpy()
 
     def Q_value(self, observations, actions):
         # compute the Q value for the give actions
