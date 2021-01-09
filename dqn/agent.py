@@ -1,4 +1,5 @@
-import memory as mem
+# import memory as mem
+from custom_replay_buffer import UniformExperienceReplay, PrioritizedExperienceReplay
 import copy
 import numpy as np
 from feedforward import QFunction
@@ -17,7 +18,7 @@ class DQNAgent(object):
         The variable specifies the observation space of the environment.
     logger: Logger
         The variable specifies a logger for model management, plotting and printing.
-    CUSTOM_DISCRETE_ACTIONS: list
+    CUSTOM_DISCRETE_ACTIONS: Iterable
         The variable specifies a custom action space
     **userconfig:
         The variable specifies the config settings.
@@ -64,7 +65,12 @@ class DQNAgent(object):
         }
         self._config.update(userconfig)
 
-        self.buffer = mem.Memory(max_size=self._config['buffer_size'])
+        if self._config['per']:
+            self.buffer = PrioritizedExperienceReplay(max_size=self._config['buffer_size'],
+                                                      alpha=self._config['per_alpha'],
+                                                      beta=1-self._config['epsilon'])
+        else:
+            self.buffer = UniformExperienceReplay(max_size=self._config['buffer_size'])
 
         milestones = []
         if self._config['lr_milestones'] is not None:
@@ -192,7 +198,7 @@ class DQNAgent(object):
     def train(self):
         losses = []
         for i in range(self._config['iter_fit']):
-            data = self.buffer.sample(batch=self._config['batch_size'])
+            data = self.buffer.sample(batch_size=self._config['batch_size'])
             s = np.stack(data[:, 0])  # s_t
             a = np.stack(data[:, 1])[:, None]  # a_t
             rew = np.stack(data[:, 2])[:, None]  # r
@@ -207,17 +213,25 @@ class DQNAgent(object):
 
             targets = rew + self._config['discount'] * np.multiply(not_done, value_s_next)
 
-            weights = np.ones(targets.shape)
+            if self._config['per']:
+                weights = np.stack(data[:, 5])[:, None]
+                indices = np.stack(data[:, 6])
+            else:
+                weights = np.ones(targets.shape)
 
             # optimize
-            # TODO: Pass weights to scale errors
             fit_loss, pred = self.Q.fit(s, a, targets, weights)
 
-            # TODO: Update priorities based on abs(target - pred)
-            # See even if the values stay in the pred vector or they are
+            if self._config['per']:
+                # TODO parametrize per_epsilon
+                priorities = np.abs(targets - pred) + 1e-6
+                self.buffer.update_priorities(indices=indices, priorities=priorities.flatten())
 
             losses.append(fit_loss)
 
         self.Q.lr_scheduler.step()
 
         return losses
+
+    def update_per_beta(self, beta):
+        self.buffer.update_beta(beta=beta)

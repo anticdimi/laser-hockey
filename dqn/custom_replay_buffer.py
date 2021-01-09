@@ -87,21 +87,17 @@ class PrioritizedExperienceReplay(ExperienceReplay):
             weight = (p_sample * self.size) ** (-self._beta)
             weights.append(weight / max_weight)
 
-        weights = np.expand_dims(np.array(weights), axis=0)
-        indices = np.expand_dims(indices, axis=0)
-
-        return np.concatenate([self._transitions[indices, :], weights, indices], axis=-1)
+        return np.concatenate([self._transitions[indices, :], np.array(weights).reshape(-1, 1),
+                                  indices.reshape(-1, 1)], axis=-1)
 
     def update_priorities(self, indices, priorities):
         for idx, priority in zip(indices, priorities):
-            assert priority > 0 # send abs of error
+            assert priority > 0
             assert 0 <= idx < self.size
             self._st_sum[idx] = priority ** self._alpha
-            self._st_sum[idx] = priority ** self._alpha
+            self._st_min[idx] = priority ** self._alpha
 
             self._max_priority = max(self._max_priority, priority)
 
     def update_beta(self, beta):
-        # (read up more on how to change it, but I would suggest as 1-eps and update it every episode;
-        # think about setting eps as 0.8 or something for it to be closer to the value in the paper (around 0.4)
         self._beta = beta
