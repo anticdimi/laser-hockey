@@ -1,21 +1,25 @@
-# import memory as mem
-from custom_replay_buffer import UniformExperienceReplay, PrioritizedExperienceReplay
+import sys
+sys.path.insert(0, '..')
+
 import copy
 import numpy as np
 from feedforward import QFunction
 import time
+from base.agent import Agent
 
 
-class DQNAgent(object):
+class DQNAgent(Agent):
     """
-    The DQNAgent class implements a trainable agent.
+    The DQNAgent class implements a trainable DQN agent.
 
     Parameters
     ----------
     opponent: object
         The variable the agent that is used as an opponent during training/evaluation.
-    obs_space: object
-        The variable specifies the observation space of the environment.
+    obs_dim: int
+        The variable specifies the dimension of observation space vector.
+    action_dim: int
+        The variable specifies the dimension of action space vector.
     logger: Logger
         The variable specifies a logger for model management, plotting and printing.
     CUSTOM_DISCRETE_ACTIONS: Iterable
@@ -24,20 +28,14 @@ class DQNAgent(object):
         The variable specifies the config settings.
     """
 
-    def __init__(self, opponent, obs_space, CUSTOM_DISCRETE_ACTIONS, logger, **userconfig):
-        self.opponent = opponent
-        self.logger = logger
-
-        if userconfig['mode'] == 'normal':
-            self.reward_function = None
-            raise NotImplementedError('Mode normal not implemented')
-        elif userconfig['mode'] == 'shooting':
-            self.reward_function = self._shooting_reward
-        elif userconfig['mode'] == 'defense':
-            self.reward_function = self._defense_reward
-        else:
-            raise ValueError('Unknown training mode. See --help')
-
+    def __init__(self, opponent, logger, obs_dim, action_dim, CUSTOM_DISCRETE_ACTIONS, userconfig):
+        super().__init__(
+            opponent=opponent,
+            logger=logger,
+            obs_dim=obs_dim,
+            action_dim=action_dim,
+            userconfig=userconfig
+        )
         # Scaling factors for rewards
         self._factors = {
             'shooting': {
@@ -56,21 +54,6 @@ class DQNAgent(object):
         }
 
         self.CUSTOM_DISCRETE_ACTIONS = CUSTOM_DISCRETE_ACTIONS
-        self._observation_space = obs_space
-        self._config = {
-            'discount': 0.95,
-            'buffer_size': int(1e5),
-            'batch_size': 128,
-            'hidden_sizes': [128, 128],
-        }
-        self._config.update(userconfig)
-
-        if self._config['per']:
-            self.buffer = PrioritizedExperienceReplay(max_size=self._config['buffer_size'],
-                                                      alpha=self._config['per_alpha'],
-                                                      beta=1-self._config['epsilon'])
-        else:
-            self.buffer = UniformExperienceReplay(max_size=self._config['buffer_size'])
 
         milestones = []
         if self._config['lr_milestones'] is not None:
@@ -81,7 +64,7 @@ class DQNAgent(object):
                                    step=self._config['change_lr_every'])[1:]
 
         self.Q = QFunction(
-            self._observation_space.shape[0],
+            obs_dim,
             len(self.CUSTOM_DISCRETE_ACTIONS),
             hidden_sizes=self._config['hidden_sizes'],
             learning_rate=self._config['learning_rate'],
@@ -104,9 +87,6 @@ class DQNAgent(object):
         else:
             action = np.random.randint(0, len(self.CUSTOM_DISCRETE_ACTIONS))
         return action
-
-    def store_transition(self, transition):
-        self.buffer.add_transition(transition)
 
     def evaluate(self, env, eval_episodes, action_mapping):
         rew_stats = []

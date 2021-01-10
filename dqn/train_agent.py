@@ -61,10 +61,13 @@ if __name__ == '__main__':
     opponent = h_env.BasicOpponent(weak=False)
     env = h_env.HockeyEnv(mode=mode, quiet=opts.q)
 
-    q_agent = DQNAgent(opponent,
-                       env.observation_space,
-                       CUSTOM_DISCRETE_ACTIONS,
-                       logger,
-                       **vars(opts))
+    q_agent = DQNAgent(
+        opponent=opponent,
+        logger=logger,
+        obs_dim=env.observation_space.shape[0],
+        action_dim=env.action_space.shape[0],
+        CUSTOM_DISCRETE_ACTIONS=CUSTOM_DISCRETE_ACTIONS,
+        userconfig=vars(opts)
+    )
     trainer = DQNTrainer(logger, vars(opts))
     trainer.train(q_agent, env, opts.evaluate, custom_discrete_to_continuous_action)
