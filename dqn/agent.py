@@ -47,7 +47,7 @@ class DQNAgent(object):
                 'factor_neutral_result': -0.02,
             },
             'defense': {
-                'closeness': 130,
+                'closeness': 260,
                 'outcome': 30,
                 'existence': 1,
                 'factor_touch': 200,
@@ -61,7 +61,7 @@ class DQNAgent(object):
             'discount': 0.95,
             'buffer_size': int(1e5),
             'batch_size': 128,
-            'hidden_sizes': [128],
+            'hidden_sizes': [128, 128],
         }
         self._config.update(userconfig)
 
@@ -180,18 +180,18 @@ class DQNAgent(object):
         reward_dict = {}
 
         if (1 <= env.player1.position[0] <= 2.5) and (2 <= env.player1.position[1] <= 6):
-            reward_dict['existence-reward'] = constants['existence']
+            reward_dict['existence-reward'] = 1
         else:
-            reward_dict['existence-reward'] = (-1) * constants['existence']
+            reward_dict['existence-reward'] = -1
 
         if reward_puck_direction < 0:
-            reward_dict['closeness-reward'] = constants['closeness'] * reward_closeness_to_puck
+            reward_dict['closeness-reward'] = 130 * reward_closeness_to_puck
 
         if env.done:
             if env.winner == -1:
-                reward_dict['outcome-reward'] = (-1) * constants['outcome'] + 5
+                reward_dict['outcome-reward'] = -25
             elif env.winner == 0:
-                reward_dict['outcome-reward'] = constants['outcome']
+                reward_dict['outcome-reward'] = 30
 
         return reward_dict
 

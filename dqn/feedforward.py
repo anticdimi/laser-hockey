@@ -102,15 +102,15 @@ class QFunction(Feedforward):
 
     def fit(self, observations, actions, targets, weights):
         weights = torch.from_numpy(weights).to(self.device).float()
-        self.optimizer.zero_grad()
         targets = torch.from_numpy(targets).to(self.device).float()
+        self.optimizer.zero_grad()
         pred = self.Q_value(observations, actions)
         loss = self.loss(pred, targets)
         weighted_loss = loss * weights
         mean_weighted_loss = weighted_loss.mean()
         mean_weighted_loss.backward()
         for param in self.parameters():
-            param.grad.data.clamp_(-10, 10)
+            param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
         return mean_weighted_loss.item(), pred.detach().numpy()
 
