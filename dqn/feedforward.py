@@ -9,7 +9,7 @@ from base.network import Feedforward
 
 class QFeedforward(Feedforward):
     """
-    The Feedforward class implements Dueling architecture of DQN.
+    The QFeedforward class implements Dueling architecture of DQN.
 
     Parameters
     ----------
@@ -48,7 +48,7 @@ class QFeedforward(Feedforward):
 
 class QFunction(QFeedforward):
     """
-    The FeedforwardDuel class implements Dueling architecture of DQN.
+    The QFunction class implements Dueling architecture of DQN.
 
     Parameters
     ----------
@@ -79,8 +79,7 @@ class QFunction(QFeedforward):
             device=device,
             dueling=dueling
         )
-        if device.type == 'cuda':
-            self.cuda()
+
         self.learning_rate = learning_rate
         self.lr_milestones = lr_milestones
         self.lr_factor = lr_factor
