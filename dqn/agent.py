@@ -1,4 +1,5 @@
-import memory as mem
+# import memory as mem
+from custom_replay_buffer import UniformExperienceReplay, PrioritizedExperienceReplay
 import copy
 import numpy as np
 from feedforward import QFunction
@@ -17,7 +18,7 @@ class DQNAgent(object):
         The variable specifies the observation space of the environment.
     logger: Logger
         The variable specifies a logger for model management, plotting and printing.
-    CUSTOM_DISCRETE_ACTIONS: list
+    CUSTOM_DISCRETE_ACTIONS: Iterable
         The variable specifies a custom action space
     **userconfig:
         The variable specifies the config settings.
@@ -46,7 +47,7 @@ class DQNAgent(object):
                 'factor_neutral_result': -0.02,
             },
             'defense': {
-                'closeness': 130,
+                'closeness': 260,
                 'outcome': 30,
                 'existence': 1,
                 'factor_touch': 200,
@@ -60,11 +61,16 @@ class DQNAgent(object):
             'discount': 0.95,
             'buffer_size': int(1e5),
             'batch_size': 128,
-            'hidden_sizes': [128],
+            'hidden_sizes': [128, 128],
         }
         self._config.update(userconfig)
 
-        self.buffer = mem.Memory(max_size=self._config['buffer_size'])
+        if self._config['per']:
+            self.buffer = PrioritizedExperienceReplay(max_size=self._config['buffer_size'],
+                                                      alpha=self._config['per_alpha'],
+                                                      beta=1-self._config['epsilon'])
+        else:
+            self.buffer = UniformExperienceReplay(max_size=self._config['buffer_size'])
 
         milestones = []
         if self._config['lr_milestones'] is not None:
@@ -174,25 +180,25 @@ class DQNAgent(object):
         reward_dict = {}
 
         if (1 <= env.player1.position[0] <= 2.5) and (2 <= env.player1.position[1] <= 6):
-            reward_dict['existence-reward'] = constants['existence']
+            reward_dict['existence-reward'] = 1
         else:
-            reward_dict['existence-reward'] = (-1) * constants['existence']
+            reward_dict['existence-reward'] = -1
 
         if reward_puck_direction < 0:
-            reward_dict['closeness-reward'] = constants['closeness'] * reward_closeness_to_puck
+            reward_dict['closeness-reward'] = 130 * reward_closeness_to_puck
 
         if env.done:
             if env.winner == -1:
-                reward_dict['outcome-reward'] = (-1) * constants['outcome'] + 5
+                reward_dict['outcome-reward'] = -25
             elif env.winner == 0:
-                reward_dict['outcome-reward'] = constants['outcome']
+                reward_dict['outcome-reward'] = 30
 
         return reward_dict
 
     def train(self):
         losses = []
         for i in range(self._config['iter_fit']):
-            data = self.buffer.sample(batch=self._config['batch_size'])
+            data = self.buffer.sample(batch_size=self._config['batch_size'])
             s = np.stack(data[:, 0])  # s_t
             a = np.stack(data[:, 1])[:, None]  # a_t
             rew = np.stack(data[:, 2])[:, None]  # r
@@ -207,10 +213,25 @@ class DQNAgent(object):
 
             targets = rew + self._config['discount'] * np.multiply(not_done, value_s_next)
 
+            if self._config['per']:
+                weights = np.stack(data[:, 5])[:, None]
+                indices = np.stack(data[:, 6])
+            else:
+                weights = np.ones(targets.shape)
+
             # optimize
-            fit_loss = self.Q.fit(s, a, targets)
+            fit_loss, pred = self.Q.fit(s, a, targets, weights)
+
+            if self._config['per']:
+                # TODO parametrize per_epsilon
+                priorities = np.abs(targets - pred) + 1e-6
+                self.buffer.update_priorities(indices=indices, priorities=priorities.flatten())
+
             losses.append(fit_loss)
 
         self.Q.lr_scheduler.step()
 
         return losses
+
+    def update_per_beta(self, beta):
+        self.buffer.update_beta(beta=beta)

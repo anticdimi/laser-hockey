@@ -25,22 +25,23 @@ parser.add_argument('--mode', help='Mode for training currently: (shooting | def
 # Training params
 parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=5000)
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=160)
-parser.add_argument('--iter_fit', help='Iter fit', type=int, default=16)
-parser.add_argument('--update_target_every', help='# of episodes between updating target net', type=int, default=1000)
+parser.add_argument('--iter_fit', help='Iter fit', type=int, default=32)
+parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1000)
+parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.0001)
 parser.add_argument('--change_lr_every', help='Change learning rate every # of episodes', type=int, default=1000)
 parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
 parser.add_argument('--lr_milestones', help='Learning rate milestones', nargs='+')
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
-parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.0001)
 parser.add_argument('--discount', help='Discount', type=float, default=0.95)
 parser.add_argument('--epsilon', help='Epsilon', type=float, default=0.95)
 parser.add_argument('--epsilon_decay', help='Epsilon decay', type=float, default=0.9987)
 parser.add_argument('--min_epsilon', help='min_epsilon', type=float, default=0.07)
 parser.add_argument('--dueling', help='Specifies whether the architecture should be dueling', action='store_true')
 parser.add_argument('--double', help='Calculate target with Double DQN', action='store_true')
+parser.add_argument('--per', help='Utilize Prioritized Experience Replay', action='store_true')
+parser.add_argument('--per_alpha', help='Alpha for PER', type=float, default=0.6)
 
 opts = parser.parse_args()
-
 
 if __name__ == '__main__':
     if opts.dry_run:

@@ -98,17 +98,21 @@ class QFunction(Feedforward):
         self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
             self.optimizer, milestones=lr_milestones, gamma=self.lr_factor
         )
-        self.loss = torch.nn.SmoothL1Loss()
+        self.loss = torch.nn.SmoothL1Loss(reduction='none')
 
-    def fit(self, observations, actions, targets):
+    def fit(self, observations, actions, targets, weights):
+        weights = torch.from_numpy(weights).to(self.device).float()
         targets = torch.from_numpy(targets).to(self.device).float()
+        self.optimizer.zero_grad()
         pred = self.Q_value(observations, actions)
         loss = self.loss(pred, targets)
-        loss.backward()
+        weighted_loss = loss * weights
+        mean_weighted_loss = weighted_loss.mean()
+        mean_weighted_loss.backward()
         for param in self.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
-        return loss.item()
+        return mean_weighted_loss.item(), pred.detach().numpy()
 
     def Q_value(self, observations, actions):
         # compute the Q value for the give actions

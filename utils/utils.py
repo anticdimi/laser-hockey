@@ -17,7 +17,7 @@ class Logger:
 
     Parameters
     ----------
-    prefix_path : str
+    prefix_path : Path
         The variable is used for specifying the root of the path where the plots and models are saved.
     mode: str
         The variable specifies in which mode we are currently running. (shooting | defense | normal)

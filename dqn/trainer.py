@@ -43,6 +43,8 @@ class DQNTrainer:
                 continue
 
             epsilon = max(epsilon_decay * epsilon, min_epsilon)
+            if self._config['per']:
+                agent.update_per_beta(beta=1-epsilon)
 
             total_reward = 0
             touched = 0
