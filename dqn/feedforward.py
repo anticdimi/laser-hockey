@@ -1,10 +1,15 @@
+import sys
+sys.path.insert(0, '.')
+sys.path.insert(1, '..')
+
 import torch
 import numpy as np
+from base.network import Feedforward
 
 
-class Feedforward(torch.nn.Module):
+class QFeedforward(Feedforward):
     """
-    The Feedforward class implements Dueling architecture of DQN.
+    The QFeedforward class implements Dueling architecture of DQN.
 
     Parameters
     ----------
@@ -19,15 +24,8 @@ class Feedforward(torch.nn.Module):
     """
 
     def __init__(self, input_size, hidden_sizes, output_size, device, dueling):
-        super(Feedforward, self).__init__()
-        self.input_size = input_size
-        self.hidden_sizes = hidden_sizes
-        self.output_size = output_size
+        super().__init__(input_size, hidden_sizes, output_size, device)
         self.dueling = dueling
-        self.device = device
-        layer_sizes = [self.input_size] + self.hidden_sizes
-        self.layers = torch.nn.ModuleList([torch.nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
-        self.activations = [torch.nn.Tanh() for l in self.layers]
 
         if dueling:
             self.A = torch.nn.Linear(self.hidden_sizes[-1], self.output_size)
@@ -36,11 +34,7 @@ class Feedforward(torch.nn.Module):
             self.Q = torch.nn.Linear(self.hidden_sizes[-1], self.output_size)
 
     def forward(self, x):
-        if self.device.type == 'cuda' and x.device.type != 'cuda':
-            x = x.to(self.device)
-
-        for layer, activation_fun in zip(self.layers, self.activations):
-            x = activation_fun(layer(x))
+        x = super().forward(x)
 
         if self.dueling:
             A = self.A(x)
@@ -51,14 +45,10 @@ class Feedforward(torch.nn.Module):
 
         return Q
 
-    def predict(self, x):
-        with torch.no_grad():
-            return self.forward(torch.from_numpy(x.astype(np.float32)).to(self.device)).cpu().numpy()
 
-
-class QFunction(Feedforward):
+class QFunction(QFeedforward):
     """
-    The FeedforwardDuel class implements Dueling architecture of DQN.
+    The QFunction class implements Dueling architecture of DQN.
 
     Parameters
     ----------
@@ -89,8 +79,7 @@ class QFunction(Feedforward):
             device=device,
             dueling=dueling
         )
-        if device.type == 'cuda':
-            self.cuda()
+
         self.learning_rate = learning_rate
         self.lr_milestones = lr_milestones
         self.lr_factor = lr_factor

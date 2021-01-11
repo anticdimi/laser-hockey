@@ -1,10 +1,14 @@
+import sys
+sys.path.insert(0, '.')
+sys.path.insert(1, '..')
+
 import numpy as np
-from segment_tree import SumSegmentTree, MinSegmentTree
+from dqn.segment_tree import SumSegmentTree, MinSegmentTree
 
 
 class ExperienceReplay:
     """
-    The Memory class implements an abstract class for an experience replay buffer.
+    The ExperienceReplay class implements a base class for an experience replay buffer.
 
     Parameters
     ----------
@@ -88,7 +92,7 @@ class PrioritizedExperienceReplay(ExperienceReplay):
             weights.append(weight / max_weight)
 
         return np.concatenate([self._transitions[indices, :], np.array(weights).reshape(-1, 1),
-                                  indices.reshape(-1, 1)], axis=-1)
+                               indices.reshape(-1, 1)], axis=-1)
 
     def update_priorities(self, indices, priorities):
         for idx, priority in zip(indices, priorities):
