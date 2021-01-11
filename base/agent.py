@@ -2,7 +2,7 @@ import sys
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 
-from base.custom_replay_buffer import *
+from base.experience_replay import *
 
 
 class Agent(object):
