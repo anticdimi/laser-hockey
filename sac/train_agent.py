@@ -36,6 +36,8 @@ parser.add_argument(
 parser.add_argument('--automatic_entropy_tuning', type=bool, default=False,
                     help='Automatically adjust alpha')
 parser.add_argument('--soft_tau', help='tau', type=float, default=0.005)
+parser.add_argument('--per', help='Utilize Prioritized Experience Replay', action='store_true')
+parser.add_argument('--per_alpha', help='Alpha for PER', type=float, default=0.6)
 
 opts = parser.parse_args()
 
