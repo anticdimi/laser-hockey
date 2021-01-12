@@ -19,9 +19,7 @@ class SACTrainer:
         episode_counter = 0
         while episode_counter < self._config['max_episodes']:
             ob = env.reset()
-            # TODO: investigate whether this should be removed, since working witn HockeyEnv_BasicOpponent opponent
-            #       we are no longer needed to explicitly get actions from opponent since that is implemented in hockey_env.py line 776
-            # obs_agent2 = env.obs_agent_two()
+            obs_agent2 = env.obs_agent_two()
 
             if (env.puck.position[0] < 5 and self._config['mode'] == 'defense') or (
                 env.puck.position[0] > 5 and self._config['mode'] == 'shooting'
@@ -37,17 +35,14 @@ class SACTrainer:
             for step in range(self._config['max_steps']):
                 a1 = agent.act(ob).squeeze()
 
-                # TODO: investigate whether this should be removed, since working witn HockeyEnv_BasicOpponent opponent
-            #       we are no longer needed to explicitly get actions from opponent since that is implemented in hockey_env.py line 776
-                # if self._config['mode'] == 'defense':
-                #     a2 = agent.opponent.act(obs_agent2)
-                # elif self._config['mode'] == 'shooting':
-                #     a2 = np.zeros_like(a1)
-                # else:
-                #     raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
-                # a1 = a2
-                # actions = np.hstack([a1, a2])
-                ob_new, reward, done, _info = env.step(a1)
+                if self._config['mode'] == 'defense':
+                    a2 = agent.opponent.act(obs_agent2)
+                elif self._config['mode'] == 'shooting':
+                    a2 = np.zeros_like(a1)
+                else:
+                    raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
+                actions = np.hstack([a1, a2])
+                ob_new, reward, done, _info = env.step(actions)
                 touched = max(touched, _info['reward_touch_puck'])
 
                 reward_dict = agent.reward_function(

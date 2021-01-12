@@ -51,12 +51,11 @@ if __name__ == '__main__':
 
     opts.device = torch.device('cuda' if opts.cuda and torch.cuda.is_available() else 'cpu')
     logger = Logger(prefix_path=os.path.dirname(os.path.realpath(__file__)) + '/logs', mode=opts.mode, quiet=opts.q)
-    # opponent = h_env.BasicOpponent(weak=False)
-    env = h_env.HockeyEnv_BasicOpponent(mode=mode, weak_opponent=False, quiet=opts.q)
-    # env = h_env.HockeyEnv(mode=mode, quiet=opts.q)
+    opponent = h_env.BasicOpponent(weak=False)
+    env = h_env.HockeyEnv(mode=mode, quiet=opts.q)
 
     agent = SACAgent(
-        # opponent=opponent,
+        opponent=opponent,
         logger=logger,
         obs_dim=env.observation_space.shape,
         action_dim=env.action_space.shape[0],

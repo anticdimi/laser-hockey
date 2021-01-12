@@ -10,10 +10,9 @@ from base import proxy_rewards
 
 
 class SACAgent(Agent):
-    def __init__(self, logger, obs_dim, action_dim, max_action, userconfig):
+    def __init__(self, opponent, logger, obs_dim, action_dim, max_action, userconfig):
         super().__init__(
-            # TODO: investigate whether this should be removed, since working witn HockeyEnv_BasicOpponent opponent
-            opponent=None,
+            opponent=opponent,
             logger=logger,
             obs_dim=obs_dim,
             action_dim=action_dim,
