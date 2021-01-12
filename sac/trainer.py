@@ -9,15 +9,13 @@ class SACTrainer:
         self._config = config
 
     def train(self, agent, env, evaluate):
-        rew_stats = []
-        loss_stats = []
-        lost_stats = {}
-        touch_stats = {}
-        won_stats = {}
+        rew_stats, q1_losses, q2_losses, actor_losses, value_losses = [], [], [], [], []
+
+        lost_stats, touch_stats, won_stats = {}, {}, {}
         rewards = defaultdict(lambda: [])
 
         episode_counter = 0
-        total_step = 0
+        total_step_counter = 0
         while episode_counter < self._config['max_episodes']:
             ob = env.reset()
             obs_agent2 = env.obs_agent_two()
@@ -27,8 +25,7 @@ class SACTrainer:
             ):
                 continue
 
-            total_reward = 0
-            touched = 0
+            total_reward, touched = 0, 0
             touch_stats[episode_counter] = 0
             won_stats[episode_counter] = 0
             lost_stats[episode_counter] = 0
@@ -62,7 +59,12 @@ class SACTrainer:
                 total_reward += summed_reward
                 agent.store_transition((ob, a1, summed_reward, ob_new, done))
 
-                agent.train(total_step)
+                losses = agent.train(total_step_counter)
+                if losses is not None:
+                    q1_losses.append(losses[0])
+                    q2_losses.append(losses[1])
+                    actor_losses.append(losses[2])
+                    value_losses.append(losses[3])
 
                 if self._config['show']:
                     time.sleep(0.01)
@@ -76,10 +78,10 @@ class SACTrainer:
                     lost_stats[episode_counter] = 1 if env.winner == -1 else 0
                     break
 
-                total_step += 1
                 ob = ob_new
+                obs_agent2 = env.obs_agent_two()
+                total_step_counter += 1
 
-            # loss_stats.extend(agent.train())
             rew_stats.append(total_reward)
 
             self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
@@ -95,17 +97,18 @@ class SACTrainer:
         # Plot reward
         self.logger.plot_running_mean(rew_stats, 'Total reward', 'total-reward.pdf', show=False)
 
-        # Plot loss
-        self.logger.plot_running_mean(loss_stats, 'Loss', 'loss.pdf', show=False)
+        # Plot losses
+        for loss, title in zip([q1_losses, q2_losses, actor_losses, value_losses],
+                               ['Q1 loss', 'Q2 loss', 'Policy loss', 'Value loss']):
+            self.logger.plot_running_mean(loss, title, f'{title.replace(" ", "-")}.pdf', show=False)
 
-        # Save model
+        # Save agent
         self.logger.save_model(agent, 'agent.pkl')
-
         # Log rew histograms
         self.logger.clean_rew_dir()
         for reward_type, reward_values in rewards.items():
             self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
 
-        # if evaluate:
-        #     agent._config['show'] = True
-        #     agent.evaluate(env, self._config['eval_episodes'])
+        if evaluate:
+            agent._config['show'] = True
+            agent.evaluate(env, self._config['eval_episodes'])
