@@ -17,6 +17,7 @@ class SACTrainer:
         rewards = defaultdict(lambda: [])
 
         episode_counter = 0
+        total_step = 0
         while episode_counter < self._config['max_episodes']:
             ob = env.reset()
             obs_agent2 = env.obs_agent_two()
@@ -61,7 +62,7 @@ class SACTrainer:
                 total_reward += summed_reward
                 agent.store_transition((ob, a1, summed_reward, ob_new, done))
 
-                agent.train()
+                agent.train(total_step)
 
                 if self._config['show']:
                     time.sleep(0.01)
@@ -75,6 +76,7 @@ class SACTrainer:
                     lost_stats[episode_counter] = 1 if env.winner == -1 else 0
                     break
 
+                total_step += 1
                 ob = ob_new
 
             # loss_stats.extend(agent.train())

@@ -93,7 +93,7 @@ class SACAgent(Agent):
 
         return acts.cpu().detach().numpy()
 
-    def train(self):
+    def train(self, total_step):
         if self.buffer.size < self._config['batch_size']:
             return
 
@@ -143,9 +143,12 @@ class SACAgent(Agent):
         self.critic_1.optimizer.step()
         self.critic_2.optimizer.step()
 
-        self._update_target_net()
+        self._soft_update(total_step)
 
-    def _update_target_net(self):
+    def _soft_update(self, step):
+        if step % self._config['update_target_every'] != 0:
+            return
+
         for target_param, param in zip(self.target_value.parameters(), self.value.parameters()):
             target_param.data.copy_(
                 target_param.data * (1.0 - self._config['soft_tau']) + param.data * self._config['soft_tau']
