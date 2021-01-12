@@ -51,7 +51,7 @@ class CriticNetwork(nn.Module):
 
 
 class ActorNetwork(Feedforward):
-    def __init__(self, input_dims, max_action, learning_rate, device,
+    def __init__(self, input_dims, learning_rate, device,
                  n_actions, action_space=None, hidden_sizes=[256, 256], reparam_noise=1e-6):
         super().__init__(
             input_size=input_dims[0],
@@ -61,7 +61,6 @@ class ActorNetwork(Feedforward):
         )
 
         self.reparam_noise = reparam_noise
-        self.max_action = max_action
         self.action_space = action_space
 
         self.mu = torch.nn.Linear(hidden_sizes[-1], n_actions)
@@ -74,7 +73,7 @@ class ActorNetwork(Feedforward):
 
         if self.action_space is not None:
             self.action_scale = torch.FloatTensor(
-                (action_space.high - action_space.min) / 2.
+                (action_space.high - action_space.low) / 2.
             ).to(self.device)
 
             self.action_bias = torch.FloatTensor(

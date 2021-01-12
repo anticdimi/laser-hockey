@@ -1,3 +1,5 @@
+# Implementation matching the newest version of paper: https://arxiv.org/pdf/1812.05905.pdf
+
 import sys
 
 sys.path.insert(0, '.')
@@ -12,7 +14,7 @@ import time
 
 
 class SACAgent(Agent):
-    def __init__(self, opponent, logger, obs_dim, action_dim, max_action, userconfig):
+    def __init__(self, opponent, logger, obs_dim, action_dim, action_space, userconfig):
         super().__init__(
             opponent=opponent,
             logger=logger,
@@ -42,9 +44,9 @@ class SACAgent(Agent):
         }
         self.actor = ActorNetwork(
             input_dims=obs_dim,
-            max_action=max_action,
             n_actions=action_dim,
             learning_rate=self._config['learning_rate'],
+            action_space=action_space,
             hidden_sizes=[256, 256],
             device=self._config['device']
         )
@@ -171,12 +173,12 @@ class SACAgent(Agent):
             q1_new, q2_new = self.critic(next_state, next_state_action)
 
             min_qf_next_target = torch.min(q1_new, q2_new) - self.alpha * next_state_log_pi
-            next_q_value = reward + not_done * self._config['gamma'] * (min_qf_next_target)
+            next_q_value = reward + not_done * self._config['gamma'] * (min_qf_next_target).squeeze()
 
         qf1, qf2 = self.critic(state, action)
 
-        qf1_loss = self.critic.loss(qf1, next_q_value)
-        qf2_loss = self.critic.loss(qf2, next_q_value)
+        qf1_loss = self.critic.loss(qf1.squeeze(), next_q_value)
+        qf2_loss = self.critic.loss(qf2.squeeze(), next_q_value)
         qf_loss = qf1_loss + qf2_loss
 
         self.critic.optimizer.zero_grad()
