@@ -9,7 +9,7 @@ class SACTrainer:
         self._config = config
 
     def train(self, agent, env, evaluate):
-        rew_stats, q1_losses, q2_losses, actor_losses, value_losses = [], [], [], [], []
+        rew_stats, q1_losses, q2_losses, actor_losses, alpha_losses = [], [], [], [], []
 
         lost_stats, touch_stats, won_stats = {}, {}, {}
         rewards = defaultdict(lambda: [])
@@ -64,7 +64,7 @@ class SACTrainer:
                     q1_losses.append(losses[0])
                     q2_losses.append(losses[1])
                     actor_losses.append(losses[2])
-                    value_losses.append(losses[3])
+                    alpha_losses.append(losses[3])
 
                 if self._config['show']:
                     time.sleep(0.01)
@@ -98,8 +98,8 @@ class SACTrainer:
         self.logger.plot_running_mean(rew_stats, 'Total reward', 'total-reward.pdf', show=False)
 
         # Plot losses
-        for loss, title in zip([q1_losses, q2_losses, actor_losses, value_losses],
-                               ['Q1 loss', 'Q2 loss', 'Policy loss', 'Value loss']):
+        for loss, title in zip([q1_losses, q2_losses, actor_losses, alpha_losses],
+                               ['Q1 loss', 'Q2 loss', 'Policy loss', 'Alpha loss']):
             self.logger.plot_running_mean(loss, title, f'{title.replace(" ", "-")}.pdf', show=False)
 
         # Save agent

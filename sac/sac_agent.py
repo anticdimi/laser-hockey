@@ -7,6 +7,7 @@ import numpy as np
 from base.agent import Agent
 from models import *
 from base import proxy_rewards
+from utils.utils import soft_update
 import time
 
 
@@ -20,6 +21,8 @@ class SACAgent(Agent):
             userconfig=userconfig
         )
         self.device = userconfig['device']
+        self.alpha = userconfig['alpha']
+        self.automatic_entropy_tuning = self._config['automatic_entropy_tuning']
 
         # Scaling factors for rewards
         self._factors = {
@@ -46,35 +49,26 @@ class SACAgent(Agent):
             device=self._config['device']
         )
 
-        self.critic_1 = CriticNetwork(
-            input_dims=obs_dim,
+        self.critic = CriticNetwork(
+            num_inputs=obs_dim,
             n_actions=action_dim,
             learning_rate=self._config['learning_rate'],
             hidden_sizes=[256, 256],
             device=self._config['device']
         )
 
-        self.critic_2 = CriticNetwork(
-            input_dims=obs_dim,
+        self.critic_target = CriticNetwork(
+            num_inputs=obs_dim,
             n_actions=action_dim,
             learning_rate=self._config['learning_rate'],
             hidden_sizes=[256, 256],
             device=self._config['device']
         )
 
-        self.value = ValueNetwork(
-            input_dims=obs_dim,
-            learning_rate=self._config['learning_rate'],
-            hidden_sizes=[256, 256],
-            device=self._config['device']
-        )
-
-        self.target_value = ValueNetwork(
-            input_dims=obs_dim,
-            learning_rate=self._config['learning_rate'],
-            hidden_sizes=[256, 256],
-            device=self._config['device']
-        )
+        if self.automatic_entropy_tuning:
+            self.target_entropy = -torch.prod(torch.FloatTensor(action_dim).to(self.device)).item()
+            self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
+            self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self._config['learning_rate'])
 
     def _shooting_reward(
         self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched=0
@@ -88,11 +82,13 @@ class SACAgent(Agent):
         return proxy_rewards.defense_proxy(self, env, reward_game_outcome, reward_closeness_to_puck,
                                            reward_touch_puck, reward_puck_direction, touched)
 
-    def act(self, obs):
+    def act(self, obs, evaluate=False):
         state = torch.FloatTensor(obs).to(self.actor.device)
-        acts, _ = self.actor.sample(state, reparam=False)
-
-        return acts.cpu().detach().numpy()
+        if evaluate is False:
+            action, _, _ = self.actor.sample(state)
+        else:
+            _, _, action = self.actor.sample(state)
+        return action.detach().cpu().numpy()
 
     def evaluate(self, env, eval_episodes):
         rew_stats = []
@@ -112,7 +108,7 @@ class SACAgent(Agent):
             touch_stats[episode_counter] = 0
             won_stats[episode_counter] = 0
             for step in range(self._config['max_steps']):
-                a1 = self.act(ob)
+                a1 = self.act(ob, True)
 
                 if self._config['mode'] == 'defense':
                     a2 = self.opponent.act(obs_agent2)
@@ -170,58 +166,45 @@ class SACAgent(Agent):
             (~np.stack(data[:, 4])[:, None]).astype(np.int)
         ).squeeze(dim=1).to(self.device)
 
-        value = self.value(state).view(-1)
-        target_value = self.target_value(next_state).view(-1)
-        # target_value[done] = 0.0
+        with torch.no_grad():
+            next_state_action, next_state_log_pi, _ = self.actor.sample(next_state)
+            q1_new, q2_new = self.critic(next_state, next_state_action)
 
-        critic_val, log_probs = self._ask_critic(state, False)
-        self.value.optimizer.zero_grad()
-        value_target = critic_val - log_probs
-        value_loss = 0.5 * self.value.loss(value, value_target)
-        value_loss.backward(retain_graph=True)
-        self.value.optimizer.step()
+            min_qf_next_target = torch.min(q1_new, q2_new) - self.alpha * next_state_log_pi
+            next_q_value = reward + not_done * self._config['gamma'] * (min_qf_next_target)
 
-        critic_val, log_probs = self._ask_critic(state, True)
+        qf1, qf2 = self.critic(state, action)
 
-        actor_loss = log_probs - critic_val
-        actor_loss = torch.mean(actor_loss)
+        qf1_loss = self.critic.loss(qf1, next_q_value)
+        qf2_loss = self.critic.loss(qf2, next_q_value)
+        qf_loss = qf1_loss + qf2_loss
+
+        self.critic.optimizer.zero_grad()
+        qf_loss.backward()
+        self.critic.optimizer.step()
+
+        pi, log_pi = self.actor(state)
+
+        qf1_pi, qf2_pi = self.critic(state, pi)
+        min_qf_pi = torch.min(qf1_pi, qf2_pi)
+
+        policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean()
+
         self.actor.optimizer.zero_grad()
-        actor_loss.backward(retain_graph=True)
-        self.actor.optimizer.step()
+        policy_loss.backward()
+        self.actor.optimizer.zero_grad()
 
-        self.critic_1.optimizer.zero_grad()
-        self.critic_2.optimizer.zero_grad()
+        if self.automatic_entropy_tuning:
+            alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()
 
-        q_hat = reward + self._config['gamma'] * target_value
-        q1_old = self.critic_1.forward(state, action).view(-1)
-        q2_old = self.critic_2.forward(state, action).view(-1)
-        critic_1_loss = 0.5 * self.critic_1.loss(q1_old, q_hat)
-        critic_2_loss = 0.5 * self.critic_2.loss(q2_old, q_hat)
+            self.alpha_optim.zero_grad()
+            alpha_loss.backward()
+            self.alpha_optim.step()
 
-        critic_loss = critic_1_loss + critic_2_loss
-        critic_loss.backward()
-        self.critic_1.optimizer.step()
-        self.critic_2.optimizer.step()
+            self.alpha = self.log_alpha.exp()
+        else:
+            alpha_loss = torch.tensor(0.).to(self.device)
 
-        self._soft_update(total_step)
+        soft_update(self.critic_target, self.critic, total_step, self._config['soft_tau'])
 
-        return critic_1_loss.item(), critic_2_loss.item(), actor_loss.item(), value_loss.item()
-
-    def _soft_update(self, step):
-        if step % self._config['update_target_every'] != 0:
-            return
-
-        for target_param, param in zip(self.target_value.parameters(), self.value.parameters()):
-            target_param.data.copy_(
-                target_param.data * (1.0 - self._config['soft_tau']) + param.data * self._config['soft_tau']
-            )
-
-    def _ask_critic(self, state, reparam):
-        actions, log_probs = self.actor.sample(state, reparam)
-        log_probs = log_probs.view(-1)
-
-        q1_new = self.critic_1.forward(state, actions)
-        q2_new = self.critic_2.forward(state, actions)
-        critic_val = torch.min(q1_new, q2_new).view(-1)
-
-        return critic_val, log_probs
+        return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item()

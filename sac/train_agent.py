@@ -25,10 +25,17 @@ parser.add_argument('--max_episodes', help='Max episodes for training', type=int
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=160)
 parser.add_argument('--iter_fit', help='Iter fit', type=int, default=16)
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
-parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.0001)
+parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.0002)
 parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1000)
-parser.add_argument('--gamma', help='Discount', type=float, default=0.95)
-parser.add_argument('--batch_size', help='batch_size', type=int, default=16)
+parser.add_argument('--gamma', help='Discount', type=float, default=0.99)
+parser.add_argument('--batch_size', help='batch_size', type=int, default=64)
+parser.add_argument(
+    '--alpha',
+    type=float,
+    default=0.2,
+    help='Temperature parameter α determines the relative importance of the entropy term against the reward')
+parser.add_argument('--automatic_entropy_tuning', type=bool, default=False,
+                    help='Automatically adjust alpha')
 parser.add_argument('--soft_tau', help='tau', type=float, default=0.005)
 parser.add_argument('--per', help='Utilize Prioritized Experience Replay', action='store_true')
 parser.add_argument('--per_alpha', help='Alpha for PER', type=float, default=0.6)

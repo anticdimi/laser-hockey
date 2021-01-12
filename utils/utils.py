@@ -11,6 +11,15 @@ def running_mean(x, N):
     return (cumsum[N:] - cumsum[:-N]) / float(N)
 
 
+def soft_update(target, source, step, tau):
+    if step % tau != 0:
+        return
+
+    for target_param, param in zip(target.parameters(), source.parameters()):
+        target_param.data.copy_(
+            target_param.data * (1.0 - tau) + param.data * tau)
+
+
 class Logger:
     """
     The Logger class is used printing statistics, saving/loading models and plotting.
