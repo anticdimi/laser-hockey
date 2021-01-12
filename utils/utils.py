@@ -40,12 +40,15 @@ class Logger:
         with open(savepath, 'wb') as outp:
             pickle.dump(model, outp, pickle.HIGHEST_PROTOCOL)
 
-    def print_episode_info(self, game_outcome, episode_counter, step, total_reward, epsilon=0):
+    def print_episode_info(self, game_outcome, episode_counter, step, total_reward, epsilon=None):
         if not self.quiet:
             padding = 8 if game_outcome == 0 else 0
-            print(
-                '{} {:>4}: Done after {:>3} steps. \tReward: {:<15}Epsilon: {:<15}'.format(
-                    " " * padding, episode_counter, step + 1, round(total_reward, 2), round(epsilon, 2)))
+            msg_string = '{} {:>4}: Done after {:>3} steps. \tReward: {:<15}'.format(
+                " " * padding, episode_counter, step + 1, round(total_reward, 2))
+            if epsilon is not None:
+                msg_string = '{}Epsilon: {:<15}'.format(msg_string, round(epsilon, 2))
+
+            print(msg_string)
 
     def print_stats(self, rew_stats, touch_stats, won_stats, lost_stats):
         if not self.quiet:
