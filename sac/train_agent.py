@@ -25,7 +25,7 @@ parser.add_argument('--max_episodes', help='Max episodes for training', type=int
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=160)
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--learning_rate', help='Learning rate', type=float, default=3e-4)
-parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1)
+parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1000)
 parser.add_argument('--gamma', help='Discount', type=float, default=0.99)
 parser.add_argument('--batch_size', help='batch_size', type=int, default=128)
 parser.add_argument(
@@ -64,7 +64,6 @@ if __name__ == '__main__':
         opponent=opponent,
         logger=logger,
         obs_dim=env.observation_space.shape,
-        action_dim=env.action_space.shape[0],
         action_space=env.action_space,
         userconfig=vars(opts)
     )

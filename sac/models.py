@@ -52,7 +52,7 @@ class CriticNetwork(nn.Module):
 
 class ActorNetwork(Feedforward):
     def __init__(self, input_dims, learning_rate, device,
-                 n_actions, action_space=None, hidden_sizes=[256, 256], reparam_noise=1e-6):
+                 action_space=None, hidden_sizes=[256, 256], reparam_noise=1e-6):
         super().__init__(
             input_size=input_dims[0],
             hidden_sizes=hidden_sizes,
@@ -62,6 +62,7 @@ class ActorNetwork(Feedforward):
 
         self.reparam_noise = reparam_noise
         self.action_space = action_space
+        n_actions = action_space.shape[0]
 
         self.mu = torch.nn.Linear(hidden_sizes[-1], n_actions)
         self.sigma = torch.nn.Linear(hidden_sizes[-1], n_actions)

@@ -82,10 +82,17 @@ class Logger:
         plt.close()
 
     def plot_running_mean(self, data, title, filename=None, show=True):
-        plt.figure()
         data_np = np.asarray(data)
         mean = running_mean(data_np, 50)
-        plt.plot(mean)
+        self._plot(mean, title, filename, show)
+
+    def plot(self, data, title, filename=None, show=True):
+        self._plot(data, title, filename, show)
+
+    def _plot(self, data, title, filename=None, show=True):
+        plt.figure()
+        # data_np = np.asarray(data)
+        plt.plot(data)
         plt.title(title)
 
         plt.savefig(self.prefix_path.joinpath(filename).with_suffix('.pdf'))

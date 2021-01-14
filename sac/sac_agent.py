@@ -1,5 +1,3 @@
-# Implementation matching the newest version of paper: https://arxiv.org/pdf/1812.05905.pdf
-
 import sys
 
 sys.path.insert(0, '.')
@@ -14,12 +12,29 @@ import time
 
 
 class SACAgent(Agent):
-    def __init__(self, opponent, logger, obs_dim, action_dim, action_space, userconfig):
+    """
+    The SACAgent class implements a trainable Soft Actor Critic agent, as described in: https://arxiv.org/pdf/1812.05905.pdf.
+
+    Parameters
+    ----------
+    opponent: object
+        The variable the agent that is used as an opponent during training/evaluation.
+    logger: Logger
+        The variable specifies a logger for model management, plotting and printing.
+    obs_dim: int
+        The variable specifies the dimension of observation space vector.
+    action_space: ndarray
+        The variable specifies the action space of environment.
+    userconfig:
+        The variable specifies the config settings.
+    """
+
+    def __init__(self, opponent, logger, obs_dim, action_space, userconfig):
         super().__init__(
             opponent=opponent,
             logger=logger,
             obs_dim=obs_dim,
-            action_dim=action_dim,
+            action_dim=action_space.shape[0],
             userconfig=userconfig
         )
         self.device = userconfig['device']
@@ -44,7 +59,6 @@ class SACAgent(Agent):
         }
         self.actor = ActorNetwork(
             input_dims=obs_dim,
-            n_actions=action_dim,
             learning_rate=self._config['learning_rate'],
             action_space=action_space,
             hidden_sizes=[256, 256],
@@ -53,7 +67,7 @@ class SACAgent(Agent):
 
         self.critic = CriticNetwork(
             num_inputs=obs_dim,
-            n_actions=action_dim,
+            n_actions=action_space.shape[0],
             learning_rate=self._config['learning_rate'],
             hidden_sizes=[256, 256],
             device=self._config['device']
@@ -61,14 +75,14 @@ class SACAgent(Agent):
 
         self.critic_target = CriticNetwork(
             num_inputs=obs_dim,
-            n_actions=action_dim,
+            n_actions=action_space.shape[0],
             learning_rate=self._config['learning_rate'],
             hidden_sizes=[256, 256],
             device=self._config['device']
         )
 
         if self.automatic_entropy_tuning:
-            self.target_entropy = -torch.prod(torch.FloatTensor(action_dim).to(self.device)).item()
+            self.target_entropy = -torch.prod(torch.FloatTensor(action_space.shape[0]).to(self.device)).item()
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self._config['learning_rate'])
 
@@ -81,8 +95,8 @@ class SACAgent(Agent):
     def _defense_reward(
         self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched
     ):
-        return proxy_rewards.defense_proxy(self, env, reward_game_outcome, reward_closeness_to_puck,
-                                           reward_touch_puck, reward_puck_direction, touched)
+        return proxy_rewards.defense_proxy_sac(self, env, reward_game_outcome, reward_closeness_to_puck,
+                                               reward_touch_puck, reward_puck_direction, touched)
 
     def act(self, obs, evaluate=False):
         state = torch.FloatTensor(obs).to(self.actor.device)
@@ -137,7 +151,7 @@ class SACAgent(Agent):
 
             rew_stats.append(total_reward)
 
-            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon=0)
+            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon=None)
 
         # Print evaluation stats
         self.logger.print_stats(rew_stats, touch_stats, won_stats, lost_stats)
@@ -150,27 +164,30 @@ class SACAgent(Agent):
 
         state = torch.FloatTensor(
             np.stack(data[:, 0])
-        ).to(self.device)
+        ).to(self.device).squeeze()
 
         next_state = torch.FloatTensor(
             np.stack(data[:, 3])
-        ).to(self.device)
+        ).to(self.device).squeeze()
 
         action = torch.FloatTensor(
             np.stack(data[:, 1])[:, None]
-        ).squeeze(dim=1).to(self.device)
+        ).squeeze(dim=1).to(self.device).squeeze()
 
         reward = torch.FloatTensor(
             np.stack(data[:, 2])[:, None]
-        ).squeeze(dim=1).to(self.device)
+        ).squeeze(dim=1).to(self.device).squeeze()
 
         not_done = torch.FloatTensor(
             (~np.stack(data[:, 4])[:, None]).astype(np.int)
-        ).squeeze(dim=1).to(self.device)
+        ).squeeze(dim=1).to(self.device).squeeze()
 
         with torch.no_grad():
             next_state_action, next_state_log_pi, _ = self.actor.sample(next_state)
             q1_new, q2_new = self.critic(next_state, next_state_action)
+            q1_new = q1_new.squeeze()
+            q2_new = q2_new.squeeze()
+            next_state_action = next_state_action.squeeze()
 
             min_qf_next_target = torch.min(q1_new, q2_new) - self.alpha * next_state_log_pi
             next_q_value = reward + not_done * self._config['gamma'] * (min_qf_next_target).squeeze()
