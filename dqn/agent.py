@@ -3,7 +3,7 @@ sys.path.insert(0, '..')
 
 import copy
 import numpy as np
-from feedforward import QFunction
+from qfeedforward import QFunction
 import time
 from base.agent import Agent
 from base import proxy_rewards
