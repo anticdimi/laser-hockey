@@ -172,22 +172,19 @@ class SACAgent(Agent):
 
         action = torch.FloatTensor(
             np.stack(data[:, 1])[:, None]
-        ).squeeze(dim=1).to(self.device).squeeze()
+        ).squeeze(dim=1).to(self.device)
 
         reward = torch.FloatTensor(
             np.stack(data[:, 2])[:, None]
-        ).squeeze(dim=1).to(self.device).squeeze()
+        ).squeeze(dim=1).to(self.device)
 
         not_done = torch.FloatTensor(
             (~np.stack(data[:, 4])[:, None]).astype(np.int)
-        ).squeeze(dim=1).to(self.device).squeeze()
+        ).squeeze(dim=1).to(self.device)
 
         with torch.no_grad():
             next_state_action, next_state_log_pi, _ = self.actor.sample(next_state)
             q1_new, q2_new = self.critic(next_state, next_state_action)
-            q1_new = q1_new.squeeze()
-            q2_new = q2_new.squeeze()
-            next_state_action = next_state_action.squeeze()
 
             min_qf_next_target = torch.min(q1_new, q2_new) - self.alpha * next_state_log_pi
             next_q_value = reward + not_done * self._config['gamma'] * (min_qf_next_target).squeeze()
