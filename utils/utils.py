@@ -11,9 +11,7 @@ def running_mean(x, N):
     return (cumsum[N:] - cumsum[:-N]) / float(N)
 
 
-def soft_update(target, source, step, tau):
-    if step % tau != 0:
-        return
+def soft_update(target, source, tau):
 
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(

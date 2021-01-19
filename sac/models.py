@@ -4,48 +4,54 @@ sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from torch.distributions import Normal
 from base.network import Feedforward
 
 
 def weights_init_(m):
     if isinstance(m, nn.Linear):
-        torch.nn.init.xavier_uniform_(m.weight, gain=1)
-        torch.nn.init.constant_(m.bias, 0)
+        nn.init.xavier_uniform_(m.weight, gain=1)
+        nn.init.constant_(m.bias, 0)
 
 
 class CriticNetwork(nn.Module):
-    def __init__(self, num_inputs, n_actions, learning_rate, device, hidden_sizes=[256, 256]):
+    def __init__(self, input_dim, n_actions, learning_rate, device, loss='l2', hidden_sizes=[256, 256]):
         super(CriticNetwork, self).__init__()
         self.device = device
+        layer_sizes = [input_dim[0] + n_actions] + hidden_sizes + [1]
 
         # Q1 architecture
-        self.linear1 = nn.Linear(num_inputs[0] + n_actions, hidden_sizes[0])
-        self.linear2 = nn.Linear(hidden_sizes[0], hidden_sizes[1])
-        self.linear3 = nn.Linear(hidden_sizes[1], 1)
+        self.q1_layers = nn.ModuleList([nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
 
         # Q2 architecture
-        self.linear4 = nn.Linear(num_inputs[0] + n_actions, hidden_sizes[0])
-        self.linear5 = nn.Linear(hidden_sizes[0], hidden_sizes[1])
-        self.linear6 = nn.Linear(hidden_sizes[1], 1)
+        self.q2_layers = nn.ModuleList([nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
 
         self.apply(weights_init_)
 
         if device.type == 'cuda':
             self.cuda()
         self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
-        self.loss = torch.nn.MSELoss()
+
+        if loss == 'l2':
+            self.loss = nn.MSELoss()
+        elif loss == 'l1':
+            self.loss = nn.SmoothL1Loss(reduction='mean')
+        else:
+            raise ValueError(f'Unkown loss function name: {loss}')
 
     def forward(self, state, action):
         xu = torch.cat([state, action], 1)
 
-        x1 = torch.relu(self.linear1(xu))
-        x1 = torch.relu(self.linear2(x1))
-        x1 = self.linear3(x1)
+        x1 = xu
+        for l in self.q1_layers[:-1]:
+            x1 = F.relu(l(x1))
+        x1 = self.q1_layers[-1](x1)
 
-        x2 = torch.relu(self.linear4(xu))
-        x2 = torch.relu(self.linear5(x2))
-        x2 = self.linear6(x2)
+        x2 = xu
+        for l in self.q2_layers[:-1]:
+            x2 = F.relu(l(x2))
+        x2 = self.q2_layers[-1](x2)
 
         return x1, x2
 
@@ -64,13 +70,11 @@ class ActorNetwork(Feedforward):
         self.action_space = action_space
         n_actions = action_space.shape[0]
 
-        self.mu = torch.nn.Linear(hidden_sizes[-1], n_actions)
-        self.sigma = torch.nn.Linear(hidden_sizes[-1], n_actions)
+        self.mu = nn.Linear(hidden_sizes[-1], n_actions)
+        self.sigma = nn.Linear(hidden_sizes[-1], n_actions)
 
         self.learning_rate = learning_rate
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, eps=0.000001)
-        self.loss = nn.MSELoss()
-        self.activations = [torch.nn.ReLU() for _ in self.layers]
 
         if self.action_space is not None:
             self.action_scale = torch.FloatTensor(
@@ -85,7 +89,9 @@ class ActorNetwork(Feedforward):
             self.action_bias = torch.tensor(0.).to(self.device)
 
     def forward(self, state):
-        prob = super().forward(state)
+        prob = state
+        for layer in self.layers:
+            prob = F.relu(layer(prob))
 
         mu = self.mu(prob)
         sigma = self.sigma(prob)
@@ -98,7 +104,7 @@ class ActorNetwork(Feedforward):
         sigma = sigma.exp()
         normal = Normal(mu, sigma)
 
-        # For reparametrization trick
+        # For the reparametrization trick
         x = normal.rsample()
         y = torch.tanh(x)
 
