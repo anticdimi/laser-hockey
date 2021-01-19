@@ -24,7 +24,7 @@ def defense_proxy(
         reward_dict['existence-reward'] = -1
 
     if reward_puck_direction < 0:
-        reward_dict['closeness-reward'] = 130 * reward_closeness_to_puck
+        reward_dict['closeness-reward'] = reward_closeness_to_puck
 
     if env.done:
         if env.winner == -1:

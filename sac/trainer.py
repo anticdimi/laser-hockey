@@ -31,7 +31,7 @@ class SACTrainer:
             lost_stats[episode_counter] = 0
 
             for step in range(self._config['max_steps']):
-                a1 = agent.act(ob).squeeze()
+                a1 = agent.act(ob)
 
                 if self._config['mode'] == 'defense':
                     a2 = agent.opponent.act(obs_agent2)
@@ -59,7 +59,7 @@ class SACTrainer:
                 total_reward += summed_reward
                 agent.store_transition((ob, a1, summed_reward, ob_new, done))
 
-                losses = agent.train(total_step_counter)
+                losses = agent.update_parameters(total_step_counter)
                 if losses is not None:
                     q1_losses.append(losses[0])
                     q2_losses.append(losses[1])

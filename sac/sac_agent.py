@@ -61,23 +61,23 @@ class SACAgent(Agent):
             input_dims=obs_dim,
             learning_rate=self._config['learning_rate'],
             action_space=action_space,
-            hidden_sizes=[256, 256],
+            hidden_sizes=[128],
             device=self._config['device']
         )
 
         self.critic = CriticNetwork(
-            num_inputs=obs_dim,
+            input_dim=obs_dim,
             n_actions=action_space.shape[0],
             learning_rate=self._config['learning_rate'],
-            hidden_sizes=[256, 256],
+            hidden_sizes=[128],
             device=self._config['device']
         )
 
         self.critic_target = CriticNetwork(
-            num_inputs=obs_dim,
+            input_dim=obs_dim,
             n_actions=action_space.shape[0],
             learning_rate=self._config['learning_rate'],
-            hidden_sizes=[256, 256],
+            hidden_sizes=[128],
             device=self._config['device']
         )
 
@@ -95,8 +95,8 @@ class SACAgent(Agent):
     def _defense_reward(
         self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched
     ):
-        return proxy_rewards.defense_proxy_sac(self, env, reward_game_outcome, reward_closeness_to_puck,
-                                               reward_touch_puck, reward_puck_direction, touched)
+        return proxy_rewards.defense_proxy(self, env, reward_game_outcome, reward_closeness_to_puck,
+                                           reward_touch_puck, reward_puck_direction, touched)
 
     def act(self, obs, evaluate=False):
         state = torch.FloatTensor(obs).to(self.actor.device)
@@ -156,7 +156,7 @@ class SACAgent(Agent):
         # Print evaluation stats
         self.logger.print_stats(rew_stats, touch_stats, won_stats, lost_stats)
 
-    def train(self, total_step):
+    def update_parameters(self, total_step):
         if self.buffer.size < self._config['batch_size']:
             return
 
@@ -164,11 +164,11 @@ class SACAgent(Agent):
 
         state = torch.FloatTensor(
             np.stack(data[:, 0])
-        ).to(self.device).squeeze()
+        ).to(self.device)
 
         next_state = torch.FloatTensor(
             np.stack(data[:, 3])
-        ).to(self.device).squeeze()
+        ).to(self.device)
 
         action = torch.FloatTensor(
             np.stack(data[:, 1])[:, None]
@@ -199,7 +199,7 @@ class SACAgent(Agent):
         qf_loss.backward()
         self.critic.optimizer.step()
 
-        pi, log_pi = self.actor(state)
+        pi, log_pi, _ = self.actor.sample(state)
 
         qf1_pi, qf2_pi = self.critic(state, pi)
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
@@ -208,7 +208,7 @@ class SACAgent(Agent):
 
         self.actor.optimizer.zero_grad()
         policy_loss.backward()
-        self.actor.optimizer.zero_grad()
+        self.actor.optimizer.step()
 
         if self.automatic_entropy_tuning:
             alpha_loss = -(self.log_alpha * (log_pi + self.target_entropy).detach()).mean()
@@ -220,7 +220,7 @@ class SACAgent(Agent):
             self.alpha = self.log_alpha.exp()
         else:
             alpha_loss = torch.tensor(0.).to(self.device)
-
-        soft_update(self.critic_target, self.critic, total_step, self._config['soft_tau'])
+        if total_step % self._config['update_target_every'] == 0:
+            soft_update(self.critic_target, self.critic, self._config['soft_tau'])
 
         return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item()
