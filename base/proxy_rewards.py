@@ -33,25 +33,3 @@ def defense_proxy(
             reward_dict['outcome-reward'] = 30
 
     return reward_dict
-
-
-def defense_proxy_sac(
-    self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched
-):
-    # TODO: Needs further tuning
-    reward_dict = {}
-    if reward_puck_direction < 0:
-        reward_dict['closeness-reward'] = reward_closeness_to_puck
-
-    reward_dict['env-reward'] = reward_game_outcome
-    reward_dict['existence-reward'] = 0.5
-
-    if env.done:
-        if env.winner == -1:
-            reward_dict['outcome-reward'] = -70
-        elif env.winner == 0:
-            reward_dict['outcome-reward'] = 50
-        elif env.winner == 1:
-            reward_dict['outcome-reward'] = 30
-
-    return reward_dict

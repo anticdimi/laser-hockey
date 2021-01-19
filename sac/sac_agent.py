@@ -57,6 +57,9 @@ class SACAgent(Agent):
             },
             'normal': {},
         }
+
+        # TODO: Should different lr's be passed to different nets?
+
         self.actor = ActorNetwork(
             input_dims=obs_dim,
             learning_rate=self._config['learning_rate'],
