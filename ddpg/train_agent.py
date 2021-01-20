@@ -34,6 +34,7 @@ parser.add_argument('--min_epsilon', help='min_epsilon', type=float, default=0.0
 parser.add_argument('--iter_fit', help='fit every n iterations', type=float, default=30)
 parser.add_argument('--batch_size', help='batch_size', type=int, default=128)
 parser.add_argument('--tau', help='tau', type=float, default=0.005)
+parser.add_argument('--per', help='Utilize Prioritized Experience Replay', action='store_true')
 
 
 opts = parser.parse_args()
