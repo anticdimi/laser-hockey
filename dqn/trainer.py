@@ -1,7 +1,7 @@
 from collections import defaultdict
 import numpy as np
 import time
-
+from evaluator import evaluate
 
 class DQNTrainer:
     """
@@ -19,7 +19,7 @@ class DQNTrainer:
         self.logger = logger
         self._config = config
 
-    def train(self, agent, env, evaluate, action_mapping):
+    def train(self, agent, env, run_evaluation, action_mapping):
         epsilon = self._config['epsilon']
         epsilon_decay = self._config['epsilon_decay']
         min_epsilon = self._config['min_epsilon']
@@ -129,6 +129,6 @@ class DQNTrainer:
         for reward_type, reward_values in rewards.items():
             self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
 
-        if evaluate:
+        if run_evaluation:
             agent._config['show'] = True
-            agent.evaluate(env, self._config['eval_episodes'], action_mapping)
+            evaluate(agent, env, self._config['eval_episodes'], action_mapping)

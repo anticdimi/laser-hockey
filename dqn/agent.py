@@ -89,58 +89,6 @@ class DQNAgent(Agent):
             action = np.random.randint(0, len(self.CUSTOM_DISCRETE_ACTIONS))
         return action
 
-    def evaluate(self, env, eval_episodes, action_mapping):
-        rew_stats = []
-        touch_stats = {}
-        won_stats = {}
-        lost_stats = {}
-        for episode_counter in range(eval_episodes):
-            total_reward = 0
-            ob = env.reset()
-            obs_agent2 = env.obs_agent_two()
-
-            if (env.puck.position[0] < 5 and self._config['mode'] == 'defense') or (
-                env.puck.position[0] > 5 and self._config['mode'] == 'shooting'
-            ):
-                continue
-
-            touch_stats[episode_counter] = 0
-            won_stats[episode_counter] = 0
-            for step in range(self._config['max_steps']):
-                a1 = self.act(ob, eps=0)
-                # a1_discrete = env.discrete_to_continous_action(a1)
-                a1_discrete = action_mapping(a1)
-
-                if self._config['mode'] == 'defense':
-                    a2 = self.opponent.act(obs_agent2)
-                elif self._config['mode'] == 'shooting':
-                    a2 = [0, 0, 0, 0]
-                else:
-                    raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
-
-                (ob_new, reward, done, _info) = env.step(np.hstack([a1_discrete, a2]))
-
-                if _info['reward_touch_puck'] > 0:
-                    touch_stats[episode_counter] = 1
-
-                total_reward += reward
-                ob = ob_new
-                obs_agent2 = env.obs_agent_two()
-                if self._config['show']:
-                    time.sleep(0.01)
-                    env.render()
-                if done:
-                    won_stats[episode_counter] = 1 if env.winner == 1 else 0
-                    lost_stats[episode_counter] = 1 if env.winner == -1 else 0
-                    break
-
-            rew_stats.append(total_reward)
-
-            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon=0)
-
-        # Print evaluation stats
-        self.logger.print_stats(rew_stats, touch_stats, won_stats, lost_stats)
-
     def _shooting_reward(
         self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched=0
     ):

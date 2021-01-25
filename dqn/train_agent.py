@@ -23,7 +23,7 @@ parser.add_argument('--evaluate', help='Set if want to evaluate agent after the 
 parser.add_argument('--mode', help='Mode for training currently: (shooting | defense | normal)', default='defense')
 
 # Training params
-parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=5000)
+parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=20)
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=160)
 parser.add_argument('--iter_fit', help='Iter fit', type=int, default=32)
 parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1000)

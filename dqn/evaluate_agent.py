@@ -3,6 +3,7 @@ from laserhockey import hockey_env as h_env
 import os
 import sys
 from custom_action_space import custom_discrete_to_continuous_action
+from evaluator import evaluate
 
 import sys
 
@@ -15,9 +16,10 @@ parser = ArgumentParser()
 # Training params
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--filename', help='Path to the pretrained model', default='agent.pkl')
-parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | defense)', default='shooting')
+parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | defense)', default='defense')
 parser.add_argument('--show', help='Set if want to render training process', action='store_true')
 parser.add_argument('--q', help='Quiet mode (no prints)', action='store_true')
+parser.add_argument('--opposite', help='Evaluate agent on opposite side', action='store_true')
 
 opts = parser.parse_args()
 
@@ -36,4 +38,5 @@ if __name__ == '__main__':
     # TODO: refactor
     q_agent._config['show'] = opts.show
     env = h_env.HockeyEnv(mode=mode)
-    q_agent.evaluate(env, opts.eval_episodes, custom_discrete_to_continuous_action)
+    # q_agent.evaluate(env, opts.eval_episodes, custom_discrete_to_continuous_action)
+    evaluate(q_agent, env, opts.eval_episodes, custom_discrete_to_continuous_action, opts.opposite)
