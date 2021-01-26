@@ -3,13 +3,14 @@ from laserhockey import hockey_env as h_env
 import os
 import sys
 from custom_action_space import custom_discrete_to_continuous_action
-from evaluator import evaluate
 
 import sys
 
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 from utils.utils import *
+from base.evaluator import evaluate
+
 
 parser = ArgumentParser()
 
@@ -38,5 +39,4 @@ if __name__ == '__main__':
     # TODO: refactor
     q_agent._config['show'] = opts.show
     env = h_env.HockeyEnv(mode=mode)
-    # q_agent.evaluate(env, opts.eval_episodes, custom_discrete_to_continuous_action)
     evaluate(q_agent, env, opts.eval_episodes, custom_discrete_to_continuous_action, opts.opposite)

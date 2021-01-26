@@ -1,7 +1,7 @@
 from collections import defaultdict
 import numpy as np
 import time
-from evaluator import evaluate
+from base.evaluator import evaluate
 
 class DQNTrainer:
     """

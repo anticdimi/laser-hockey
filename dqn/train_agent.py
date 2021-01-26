@@ -23,7 +23,7 @@ parser.add_argument('--evaluate', help='Set if want to evaluate agent after the 
 parser.add_argument('--mode', help='Mode for training currently: (shooting | defense | normal)', default='defense')
 
 # Training params
-parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=20)
+parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=12000)
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=160)
 parser.add_argument('--iter_fit', help='Iter fit', type=int, default=32)
 parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1000)
@@ -35,7 +35,7 @@ parser.add_argument('--eval_episodes', help='Set number of evaluation episodes',
 parser.add_argument('--discount', help='Discount', type=float, default=0.95)
 parser.add_argument('--epsilon', help='Epsilon', type=float, default=0.95)
 parser.add_argument('--epsilon_decay', help='Epsilon decay', type=float, default=0.9987)
-parser.add_argument('--min_epsilon', help='min_epsilon', type=float, default=0.07)
+parser.add_argument('--min_epsilon', help='min_epsilon', type=float, default=0.05)
 parser.add_argument('--dueling', help='Specifies whether the architecture should be dueling', action='store_true')
 parser.add_argument('--double', help='Calculate target with Double DQN', action='store_true')
 parser.add_argument('--per', help='Utilize Prioritized Experience Replay', action='store_true')
