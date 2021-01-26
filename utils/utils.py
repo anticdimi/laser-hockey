@@ -65,7 +65,10 @@ class Logger:
                             ['Mean lost', np.around(np.mean(list(lost_stats.values())), 3)]], tablefmt='grid'))
 
     def load_model(self, filename):
-        load_path = self.prefix_path.joinpath(filename).with_suffix('.pkl')
+        if filename is None:
+            load_path = self.prefix_path.joinpath('agent.pkl')
+        else:
+            load_path = Path(filename)
         with open(load_path, 'rb') as inp:
             return pickle.load(inp)
 
