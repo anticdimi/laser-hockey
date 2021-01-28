@@ -2,7 +2,7 @@ import time
 import numpy as np
 
 
-def evaluate(agent, env, eval_episodes, action_mapping, evaluate_on_opposite_side=False):
+def evaluate(agent, env, eval_episodes, action_mapping=None, evaluate_on_opposite_side=False):
     rew_stats = []
     touch_stats = {}
     won_stats = {}
@@ -22,8 +22,12 @@ def evaluate(agent, env, eval_episodes, action_mapping, evaluate_on_opposite_sid
         for step in range(agent._config['max_steps']):
 
             if evaluate_on_opposite_side:
-                a2 = agent.act(obs_agent2, eps=0)
-                a2 = action_mapping(a2)
+                if action_mapping is not None:
+                    # DQN act
+                    a2 = agent.act(obs_agent2, eps=0)
+                    a2 = action_mapping(a2)
+                else:
+                    a2 = agent.act(obs_agent2, True)
 
                 if agent._config['mode'] == 'defense':
                     a1 = agent.opponent.act(ob)
@@ -33,8 +37,13 @@ def evaluate(agent, env, eval_episodes, action_mapping, evaluate_on_opposite_sid
                     raise NotImplementedError(f'Training for {agent._config["mode"]} not implemented.')
 
             else:
-                a1 = agent.act(ob, eps=0)
-                a1 = action_mapping(a1)
+                if action_mapping is not None:
+                    # DQN act
+                    a1 = agent.act(ob, eps=0)
+                    a1 = action_mapping(a1)
+                else:
+                    # SAC act
+                    a1 = agent.act(ob, True)
 
                 if agent._config['mode'] == 'defense':
                     a2 = agent.opponent.act(obs_agent2)
