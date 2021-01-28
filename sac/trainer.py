@@ -1,14 +1,26 @@
 from collections import defaultdict
 import numpy as np
 import time
+from base.evaluator import evaluate
 
 
 class SACTrainer:
+    """
+    The SACTrainer class implements a trainer for the SACAgent.
+
+    Parameters
+    ----------
+    logger: Logger
+        The variable specifies a logger for model management, plotting and printing.
+    config: dict
+        The variable specifies config variables.
+    """
+
     def __init__(self, logger, config) -> None:
         self.logger = logger
         self._config = config
 
-    def train(self, agent, env, evaluate):
+    def train(self, agent, env, run_evaluation):
         rew_stats, q1_losses, q2_losses, actor_losses, alpha_losses = [], [], [], [], []
 
         lost_stats, touch_stats, won_stats = {}, {}, {}
@@ -109,6 +121,6 @@ class SACTrainer:
         for reward_type, reward_values in rewards.items():
             self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
 
-        if evaluate:
+        if run_evaluation:
             agent._config['show'] = True
-            agent.evaluate(env, self._config['eval_episodes'])
+            evaluate(agent, env, self._config['eval_episodes'])
