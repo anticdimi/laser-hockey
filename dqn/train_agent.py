@@ -59,7 +59,7 @@ if __name__ == '__main__':
     opts.device = torch.device('cuda' if opts.cuda and torch.cuda.is_available() else 'cpu')
     logger = Logger(prefix_path=os.path.dirname(os.path.realpath(__file__)) + '/logs', mode=opts.mode, quiet=opts.q)
     opponent = h_env.BasicOpponent(weak=False)
-    env = h_env.HockeyEnv(mode=mode, quiet=opts.q)
+    env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
 
     q_agent = DQNAgent(
         opponent=opponent,
