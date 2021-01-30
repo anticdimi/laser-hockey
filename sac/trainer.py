@@ -101,7 +101,9 @@ class SACTrainer:
                 total_step_counter += 1
 
             if episode_counter % self._config['evaluate_every'] == 0:
+                agent.eval()
                 rew, touch, won, lost = evaluate(agent, env, 50, quiet=True)
+                agent.train()
 
                 eval_stats['reward'].append(rew)
                 eval_stats['touch'].append(touch)
@@ -136,11 +138,13 @@ class SACTrainer:
 
         # Save agent
         self.logger.save_model(agent, 'agent.pkl')
+
         # Log rew histograms
         self.logger.clean_rew_dir()
         for reward_type, reward_values in rewards.items():
             self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
 
         if run_evaluation:
+            agent.eval()
             agent._config['show'] = True
             evaluate(agent, env, self._config['eval_episodes'])

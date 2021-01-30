@@ -30,7 +30,7 @@ def evaluate(agent, env, eval_episodes, quiet=False, action_mapping=None, evalua
                     a2 = agent.act(obs_agent2, eps=0)
                     a2 = action_mapping(a2)
                 else:
-                    a2 = agent.act(obs_agent2, True)
+                    a2 = agent.act(obs_agent2)
 
                 if agent._config['mode'] == 'defense':
                     a1 = agent.opponent.act(ob)
@@ -46,7 +46,7 @@ def evaluate(agent, env, eval_episodes, quiet=False, action_mapping=None, evalua
                     a1 = action_mapping(a1)
                 else:
                     # SAC act
-                    a1 = agent.act(ob, True)
+                    a1 = agent.act(ob)
 
                 if agent._config['mode'] == 'defense':
                     a2 = agent.opponent.act(obs_agent2)

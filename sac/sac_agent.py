@@ -40,6 +40,7 @@ class SACAgent(Agent):
         self.device = userconfig['device']
         self.alpha = userconfig['alpha']
         self.automatic_entropy_tuning = self._config['automatic_entropy_tuning']
+        self.eval_mode = False
 
         # Scaling factors for rewards
         self._factors = {
@@ -101,7 +102,16 @@ class SACAgent(Agent):
         return proxy_rewards.defense_proxy(self, env, reward_game_outcome, reward_closeness_to_puck,
                                            reward_touch_puck, reward_puck_direction, touched)
 
-    def act(self, obs, evaluate=False):
+    def eval(self):
+        self.eval_mode = True
+
+    def train(self):
+        self.eval_mode = False
+
+    def act(self, obs):
+        return self._act(obs, True) if self.eval_mode else self._act(obs)
+
+    def _act(self, obs, evaluate=False):
         state = torch.FloatTensor(obs).to(self.actor.device)
         if evaluate is False:
             action, _, _ = self.actor.sample(state)
