@@ -25,6 +25,12 @@ class SACTrainer:
 
         lost_stats, touch_stats, won_stats = {}, {}, {}
         rewards = defaultdict(lambda: [])
+        eval_stats = {
+            'reward': [],
+            'touch': [],
+            'won': [],
+            'lost': []
+        }
 
         episode_counter = 0
         total_step_counter = 0
@@ -94,6 +100,15 @@ class SACTrainer:
                 obs_agent2 = env.obs_agent_two()
                 total_step_counter += 1
 
+            if episode_counter % self._config['evaluate_every'] == 0:
+                rew, touch, won, lost = evaluate(agent, env, 50, quiet=True)
+
+                eval_stats['reward'].append(rew)
+                eval_stats['touch'].append(touch)
+                eval_stats['won'].append(won)
+                eval_stats['lost'].append(lost)
+                self.logger.save_model(agent, f'a-{episode_counter}.pkl')
+
             rew_stats.append(total_reward)
 
             self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
@@ -106,8 +121,13 @@ class SACTrainer:
         # Print train stats
         self.logger.print_stats(rew_stats, touch_stats, won_stats, lost_stats)
 
+        self.logger.info('Saving training statistics...')
+
         # Plot reward
         self.logger.plot_running_mean(rew_stats, 'Total reward', 'total-reward.pdf', show=False)
+
+        # Plot evaluation stats
+        self.logger.plot_intermediate_stats(eval_stats, show=False)
 
         # Plot losses
         for loss, title in zip([q1_losses, q2_losses, actor_losses, alpha_losses],

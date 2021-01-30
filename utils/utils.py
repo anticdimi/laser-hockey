@@ -42,6 +42,10 @@ class Logger:
         if not self.quiet:
             print(f"Running in mode: {mode}")
 
+    # TODO: add logging to file if needed
+    def info(self, message):
+        print(message)
+
     def save_model(self, model, filename):
         savepath = self.prefix_path.joinpath(filename).with_suffix('.pkl')
         with open(savepath, 'wb') as outp:
@@ -89,6 +93,12 @@ class Logger:
 
     def plot(self, data, title, filename=None, show=True):
         self._plot(data, title, filename, show)
+
+    def plot_intermediate_stats(self, data, show=True):
+        for key in data.keys():
+            title = f'Evaluation {key} mean'
+            filename = f'{key}.pdf'
+            self._plot(data[key], title, filename, show)
 
     def _plot(self, data, title, filename=None, show=True):
         plt.figure()

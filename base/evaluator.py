@@ -2,7 +2,10 @@ import time
 import numpy as np
 
 
-def evaluate(agent, env, eval_episodes, action_mapping=None, evaluate_on_opposite_side=False):
+def evaluate(agent, env, eval_episodes, quiet=False, action_mapping=None, evaluate_on_opposite_side=False):
+    old_verbose = env.verbose
+    env.verbose = not quiet
+
     rew_stats = []
     touch_stats = {}
     won_stats = {}
@@ -80,8 +83,19 @@ def evaluate(agent, env, eval_episodes, action_mapping=None, evaluate_on_opposit
                 break
 
         rew_stats.append(total_reward)
+        if not quiet:
+            agent.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon=0)
 
-        agent.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon=0)
+    if not quiet:
+        # Print evaluation stats
+        agent.logger.print_stats(rew_stats, touch_stats, won_stats, lost_stats)
 
-    # Print evaluation stats
-    agent.logger.print_stats(rew_stats, touch_stats, won_stats, lost_stats)
+    # Toggle the verbose flag onto the old value
+    env.verbose = old_verbose
+
+    return (
+        np.around(np.mean(rew_stats), 3),
+        np.around(np.mean(list(touch_stats.values())), 3),
+        np.around(np.mean(list(won_stats.values())), 3),
+        np.around(np.mean(list(lost_stats.values())), 3)
+    )
