@@ -25,7 +25,7 @@ parser.add_argument('--max_episodes', help='Max episodes for training', type=int
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=160)
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--evaluate_every',
-                    help='# of episodes between evaluating agent during the training', type=int, default=5)
+                    help='# of episodes between evaluating agent during the training', type=int, default=1000)
 # TODO: Implement lr_milestones
 parser.add_argument('--learning_rate', help='Learning rate', type=float, default=3e-4)
 parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1000)
