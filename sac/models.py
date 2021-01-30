@@ -16,7 +16,7 @@ def weights_init_(m):
 
 
 class CriticNetwork(nn.Module):
-    def __init__(self, input_dim, n_actions, learning_rate, device, lr_milestones=[1000, 2000], lr_factor=0.5, loss='l2', hidden_sizes=[256, 256]):
+    def __init__(self, input_dim, n_actions, learning_rate, device, lr_milestones, lr_factor=0.5, loss='l2', hidden_sizes=[256, 256]):
         super(CriticNetwork, self).__init__()
         self.device = device
         layer_sizes = [input_dim[0] + n_actions] + hidden_sizes + [1]
@@ -60,7 +60,7 @@ class CriticNetwork(nn.Module):
 
 
 class ActorNetwork(Feedforward):
-    def __init__(self, input_dims, learning_rate, device, lr_milestones=[1000, 2000], lr_factor=0.5,
+    def __init__(self, input_dims, learning_rate, device, lr_milestones, lr_factor=0.5,
                  action_space=None, hidden_sizes=[256, 256], reparam_noise=1e-6):
         super().__init__(
             input_size=input_dims[0],
