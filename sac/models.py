@@ -16,7 +16,7 @@ def weights_init_(m):
 
 
 class CriticNetwork(nn.Module):
-    def __init__(self, input_dim, n_actions, learning_rate, device, loss='l2', hidden_sizes=[256, 256]):
+    def __init__(self, input_dim, n_actions, learning_rate, device, lr_milestones=[1000, 2000], lr_factor=0.5, loss='l2', hidden_sizes=[256, 256]):
         super(CriticNetwork, self).__init__()
         self.device = device
         layer_sizes = [input_dim[0] + n_actions] + hidden_sizes + [1]
@@ -32,6 +32,9 @@ class CriticNetwork(nn.Module):
         if device.type == 'cuda':
             self.cuda()
         self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
+        self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            self.optimizer, milestones=lr_milestones, gamma=lr_factor
+        )
 
         if loss == 'l2':
             self.loss = nn.MSELoss()
@@ -57,7 +60,7 @@ class CriticNetwork(nn.Module):
 
 
 class ActorNetwork(Feedforward):
-    def __init__(self, input_dims, learning_rate, device,
+    def __init__(self, input_dims, learning_rate, device, lr_milestones=[1000, 2000], lr_factor=0.5,
                  action_space=None, hidden_sizes=[256, 256], reparam_noise=1e-6):
         super().__init__(
             input_size=input_dims[0],
@@ -75,6 +78,9 @@ class ActorNetwork(Feedforward):
 
         self.learning_rate = learning_rate
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, eps=0.000001)
+        self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            self.optimizer, milestones=lr_milestones, gamma=lr_factor
+        )
 
         if self.action_space is not None:
             self.action_scale = torch.FloatTensor(

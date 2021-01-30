@@ -114,7 +114,8 @@ class SACTrainer:
             rew_stats.append(total_reward)
 
             self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
-
+            if losses is not None:
+                agent.schedulers_step()
             episode_counter += 1
 
         if self._config['show']:

@@ -59,6 +59,11 @@ class SACAgent(Agent):
             'normal': {},
         }
 
+        if self._config['lr_milestones'] is None:
+            raise ValueError('lr_milestones argument cannot be None!\nExample: --lr_milestones=100 200 300')
+
+        lr_milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
+
         # TODO: Should different lr's be passed to different nets?
 
         self.actor = ActorNetwork(
@@ -66,6 +71,8 @@ class SACAgent(Agent):
             learning_rate=self._config['learning_rate'],
             action_space=action_space,
             hidden_sizes=[128],
+            lr_milestones=lr_milestones,
+            lr_factor=self._config['lr_factor'],
             device=self._config['device']
         )
 
@@ -74,6 +81,8 @@ class SACAgent(Agent):
             n_actions=action_space.shape[0],
             learning_rate=self._config['learning_rate'],
             hidden_sizes=[128],
+            lr_milestones=lr_milestones,
+            lr_factor=self._config['lr_factor'],
             device=self._config['device']
         )
 
@@ -118,6 +127,10 @@ class SACAgent(Agent):
         else:
             _, _, action = self.actor.sample(state)
         return action.detach().cpu().numpy()
+
+    def schedulers_step(self):
+        self.critic.lr_scheduler.step()
+        self.actor.lr_scheduler.step()
 
     def update_parameters(self, total_step):
         if self.buffer.size < self._config['batch_size']:

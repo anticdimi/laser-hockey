@@ -28,6 +28,8 @@ parser.add_argument('--evaluate_every',
                     help='# of episodes between evaluating agent during the training', type=int, default=1000)
 # TODO: Implement lr_milestones
 parser.add_argument('--learning_rate', help='Learning rate', type=float, default=3e-4)
+parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
+parser.add_argument('--lr_milestones', help='Learning rate milestones', nargs='+')
 parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1000)
 parser.add_argument('--gamma', help='Discount', type=float, default=0.99)
 parser.add_argument('--batch_size', help='batch_size', type=int, default=128)
