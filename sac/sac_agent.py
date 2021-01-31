@@ -91,6 +91,7 @@ class SACAgent(Agent):
             n_actions=action_space.shape[0],
             learning_rate=self._config['learning_rate'],
             hidden_sizes=[128],
+            lr_milestones=lr_milestones,
             device=self._config['device']
         )
 
