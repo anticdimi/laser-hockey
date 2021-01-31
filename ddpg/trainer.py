@@ -1,12 +1,11 @@
 from collections import defaultdict
 import numpy as np
 import time
-from base.evaluator import evaluate
 
 
-class SACTrainer:
+class DDPGTrainer:
     """
-    The SACTrainer class implements a trainer for the SACAgent.
+    The DQNTrainer class implements a trainer for the DDPGAgent.
 
     Parameters
     ----------
@@ -20,39 +19,48 @@ class SACTrainer:
         self.logger = logger
         self._config = config
 
-    def train(self, agent, env, run_evaluation):
-        rew_stats, q1_losses, q2_losses, actor_losses, alpha_losses = [], [], [], [], []
-
-        lost_stats, touch_stats, won_stats = {}, {}, {}
-        rewards = defaultdict(lambda: [])
-
+    def train(self, agent, env, evaluate):
+        epsilon = self._config['eps']
+        epsilon_decay = self._config['epsilon_decay']
+        min_epsilon = self._config['min_epsilon']
+        iter_fit = self._config['iter_fit']
         episode_counter = 0
         total_step_counter = 0
+
+        rew_stats = []
+        loss_stats = []
+        lost_stats = {}
+        touch_stats = {}
+        won_stats = {}
+        rewards = defaultdict(lambda: [])
+
         while episode_counter < self._config['max_episodes']:
             ob = env.reset()
             obs_agent2 = env.obs_agent_two()
 
             if (env.puck.position[0] < 5 and self._config['mode'] == 'defense') or (
-                env.puck.position[0] > 5 and self._config['mode'] == 'shooting'
+                    env.puck.position[0] > 5 and self._config['mode'] == 'shooting'
             ):
                 continue
 
-            total_reward, touched = 0, 0
+            epsilon = max(epsilon_decay * epsilon, min_epsilon)
+            total_reward = 0
+            touched = 0
             touch_stats[episode_counter] = 0
             won_stats[episode_counter] = 0
             lost_stats[episode_counter] = 0
 
             for step in range(self._config['max_steps']):
-                a1 = agent.act(ob)
 
+                a1 = agent.act(ob, eps=epsilon)
                 if self._config['mode'] == 'defense':
                     a2 = agent.opponent.act(obs_agent2)
                 elif self._config['mode'] == 'shooting':
-                    a2 = np.zeros_like(a1)
+                    a2 = [0, 0, 0, 0]
                 else:
                     raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
-                actions = np.hstack([a1, a2])
-                ob_new, reward, done, _info = env.step(actions)
+                #print(a1, np.hstack([a1, a2]))
+                (ob_new, reward, done, _info) = env.step(np.hstack([a1, a2]))
                 touched = max(touched, _info['reward_touch_puck'])
 
                 reward_dict = agent.reward_function(
@@ -71,13 +79,6 @@ class SACTrainer:
                 total_reward += summed_reward
                 agent.store_transition((ob, a1, summed_reward, ob_new, done))
 
-                losses = agent.update_parameters(total_step_counter)
-                if losses is not None:
-                    q1_losses.append(losses[0])
-                    q2_losses.append(losses[1])
-                    actor_losses.append(losses[2])
-                    alpha_losses.append(losses[3])
-
                 if self._config['show']:
                     time.sleep(0.01)
                     env.render()
@@ -94,9 +95,10 @@ class SACTrainer:
                 obs_agent2 = env.obs_agent_two()
                 total_step_counter += 1
 
+            loss_stats.extend(agent.train(iter_fit))
             rew_stats.append(total_reward)
 
-            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
+            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon)
 
             episode_counter += 1
 
@@ -109,18 +111,17 @@ class SACTrainer:
         # Plot reward
         self.logger.plot_running_mean(rew_stats, 'Total reward', 'total-reward.pdf', show=False)
 
-        # Plot losses
-        for loss, title in zip([q1_losses, q2_losses, actor_losses, alpha_losses],
-                               ['Q1 loss', 'Q2 loss', 'Policy loss', 'Alpha loss']):
-            self.logger.plot_running_mean(loss, title, f'{title.replace(" ", "-")}.pdf', show=False)
+        # Plot loss
+        self.logger.plot_running_mean(loss_stats, 'Loss', 'loss.pdf', show=False)
 
-        # Save agent
+        # Save model
         self.logger.save_model(agent, 'agent.pkl')
+
         # Log rew histograms
         self.logger.clean_rew_dir()
         for reward_type, reward_values in rewards.items():
             self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
 
-        if run_evaluation:
+        if evaluate:
             agent._config['show'] = True
-            evaluate(agent, env, self._config['eval_episodes'])
+            agent.evaluate(env, self._config['eval_episodes'])
