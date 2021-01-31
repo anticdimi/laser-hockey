@@ -28,11 +28,13 @@ class Logger:
         The variable is used for specifying the root of the path where the plots and models are saved.
     mode: str
         The variable specifies in which mode we are currently running. (shooting | defense | normal)
+    cleanup: bool
+        The variable specifies whether the logging folder should be cleaned up.
     quiet: boolean
         This variable is used to specify whether the prints are hidden or not.
     """
 
-    def __init__(self, prefix_path, mode, quiet=False) -> None:
+    def __init__(self, prefix_path, mode, cleanup=False, quiet=False) -> None:
         self.prefix_path = Path(prefix_path)
 
         self.reward_prefix_path = self.prefix_path.joinpath('rewards')
@@ -41,7 +43,8 @@ class Logger:
 
         self.prefix_path.mkdir(exist_ok=True)
 
-        self._cleanup()
+        if cleanup:
+            self._cleanup()
 
         self.quiet = quiet
 
@@ -76,7 +79,7 @@ class Logger:
 
     def load_model(self, filename):
         if filename is None:
-            load_path = self.prefix_path.joinpath('agent.pkl')
+            load_path = self.agents_prefix_path.joinpath('agent.pkl')
         else:
             load_path = Path(filename)
         with open(load_path, 'rb') as inp:
