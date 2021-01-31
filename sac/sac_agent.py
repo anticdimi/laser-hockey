@@ -78,7 +78,7 @@ class SACAgent(Agent):
 
         self.critic = CriticNetwork(
             input_dim=obs_dim,
-            n_actions=action_space.shape[0],
+            n_actions=4,
             learning_rate=self._config['learning_rate'],
             hidden_sizes=[128, 128],
             lr_milestones=lr_milestones,
@@ -88,7 +88,7 @@ class SACAgent(Agent):
 
         self.critic_target = CriticNetwork(
             input_dim=obs_dim,
-            n_actions=action_space.shape[0],
+            n_actions=4,
             learning_rate=self._config['learning_rate'],
             hidden_sizes=[128, 128],
             lr_milestones=lr_milestones,

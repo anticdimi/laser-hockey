@@ -32,9 +32,9 @@ class SACTrainer:
             'lost': []
         }
 
-        episode_counter = 0
+        episode_counter = 1
         total_step_counter = 0
-        while episode_counter < self._config['max_episodes']:
+        while episode_counter <= self._config['max_episodes']:
             ob = env.reset()
             obs_agent2 = env.obs_agent_two()
 
