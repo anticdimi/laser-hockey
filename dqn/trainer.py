@@ -33,6 +33,13 @@ class DQNTrainer:
         won_stats = {}
         rewards = defaultdict(lambda: [])
 
+        eval_stats = {
+            'reward': [],
+            'touch': [],
+            'won': [],
+            'lost': []
+        }
+
         while episode_counter < self._config['max_episodes']:
             ob = env.reset()
             obs_agent2 = env.obs_agent_two()
@@ -102,10 +109,25 @@ class DQNTrainer:
                 obs_agent2 = env.obs_agent_two()
                 total_step_counter += 1
 
+            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon)
+
+            if episode_counter % self._config['evaluate_every'] == 0:
+                agent.eval()
+                old_show = agent._config['show']
+                agent._config['show'] = False
+                rew, touch, won, lost = evaluate(agent=agent, env=env, eval_episodes=self._config['eval_episodes'],
+                                                 quiet=True, action_mapping=action_mapping)
+                agent.train()
+                agent._config['show'] = old_show
+
+                eval_stats['reward'].append(rew)
+                eval_stats['touch'].append(touch)
+                eval_stats['won'].append(won)
+                eval_stats['lost'].append(lost)
+                self.logger.save_model(agent, f'a-{episode_counter}.pkl')
+
             loss_stats.extend(agent.train())
             rew_stats.append(total_reward)
-
-            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon)
 
             episode_counter += 1
 
@@ -115,20 +137,26 @@ class DQNTrainer:
         # Print train stats
         self.logger.print_stats(rew_stats, touch_stats, won_stats, lost_stats)
 
+        self.logger.info('Saving statistics...')
+
         # Plot reward
         self.logger.plot_running_mean(rew_stats, 'Total reward', 'total-reward.pdf', show=False)
 
         # Plot loss
         self.logger.plot_running_mean(loss_stats, 'Loss', 'loss.pdf', show=False)
 
+        # Plot evaluation stats
+        self.logger.plot_intermediate_stats(eval_stats, show=False)
+
         # Save model
         self.logger.save_model(agent, 'agent.pkl')
 
         # Log rew histograms
-        self.logger.clean_rew_dir()
         for reward_type, reward_values in rewards.items():
             self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
 
         if run_evaluation:
             agent._config['show'] = True
-            evaluate(agent, env, self._config['eval_episodes'], action_mapping)
+            agent.eval()
+            evaluate(agent=agent, env=env, eval_episodes=self._config['eval_episodes'], quiet=False,
+                     action_mapping=action_mapping, evaluate_on_opposite_side=False)

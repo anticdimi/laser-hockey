@@ -38,5 +38,6 @@ if __name__ == '__main__':
     q_agent = logger.load_model(opts.filename)
     # TODO: refactor
     q_agent._config['show'] = opts.show
+    q_agent.eval()
     env = h_env.HockeyEnv(mode=mode)
-    evaluate(q_agent, env, opts.eval_episodes, custom_discrete_to_continuous_action, opts.opposite)
+    evaluate(q_agent, env, opts.eval_episodes, opts.q, custom_discrete_to_continuous_action, opts.opposite)

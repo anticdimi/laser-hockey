@@ -40,6 +40,7 @@ class SACAgent(Agent):
         self.device = userconfig['device']
         self.alpha = userconfig['alpha']
         self.automatic_entropy_tuning = self._config['automatic_entropy_tuning']
+        self.eval_mode = False
 
         # Scaling factors for rewards
         self._factors = {
@@ -58,13 +59,20 @@ class SACAgent(Agent):
             'normal': {},
         }
 
+        if self._config['lr_milestones'] is None:
+            raise ValueError('lr_milestones argument cannot be None!\nExample: --lr_milestones=100 200 300')
+
+        lr_milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
+
         # TODO: Should different lr's be passed to different nets?
 
         self.actor = ActorNetwork(
             input_dims=obs_dim,
             learning_rate=self._config['learning_rate'],
             action_space=action_space,
-            hidden_sizes=[128],
+            hidden_sizes=[128, 128],
+            lr_milestones=lr_milestones,
+            lr_factor=self._config['lr_factor'],
             device=self._config['device']
         )
 
@@ -72,7 +80,9 @@ class SACAgent(Agent):
             input_dim=obs_dim,
             n_actions=action_space.shape[0],
             learning_rate=self._config['learning_rate'],
-            hidden_sizes=[128],
+            hidden_sizes=[128, 128],
+            lr_milestones=lr_milestones,
+            lr_factor=self._config['lr_factor'],
             device=self._config['device']
         )
 
@@ -80,7 +90,8 @@ class SACAgent(Agent):
             input_dim=obs_dim,
             n_actions=action_space.shape[0],
             learning_rate=self._config['learning_rate'],
-            hidden_sizes=[128],
+            hidden_sizes=[128, 128],
+            lr_milestones=lr_milestones,
             device=self._config['device']
         )
 
@@ -101,13 +112,26 @@ class SACAgent(Agent):
         return proxy_rewards.defense_proxy(self, env, reward_game_outcome, reward_closeness_to_puck,
                                            reward_touch_puck, reward_puck_direction, touched)
 
-    def act(self, obs, evaluate=False):
+    def eval(self):
+        self.eval_mode = True
+
+    def train(self):
+        self.eval_mode = False
+
+    def act(self, obs):
+        return self._act(obs, True) if self.eval_mode else self._act(obs)
+
+    def _act(self, obs, evaluate=False):
         state = torch.FloatTensor(obs).to(self.actor.device)
         if evaluate is False:
             action, _, _ = self.actor.sample(state)
         else:
             _, _, action = self.actor.sample(state)
         return action.detach().cpu().numpy()
+
+    def schedulers_step(self):
+        self.critic.lr_scheduler.step()
+        self.actor.lr_scheduler.step()
 
     def update_parameters(self, total_step):
         if self.buffer.size < self._config['batch_size']:

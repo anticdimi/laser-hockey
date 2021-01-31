@@ -24,8 +24,12 @@ parser.add_argument('--mode', help='Mode for training currently: (shooting | def
 parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=5000)
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=160)
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
+parser.add_argument('--evaluate_every',
+                    help='# of episodes between evaluating agent during the training', type=int, default=1000)
 # TODO: Implement lr_milestones
 parser.add_argument('--learning_rate', help='Learning rate', type=float, default=3e-4)
+parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
+parser.add_argument('--lr_milestones', help='Learning rate milestones', nargs='+')
 parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1000)
 parser.add_argument('--gamma', help='Discount', type=float, default=0.99)
 parser.add_argument('--batch_size', help='batch_size', type=int, default=128)
@@ -57,7 +61,10 @@ if __name__ == '__main__':
         raise ValueError('Unknown training mode. See --help')
 
     opts.device = torch.device('cuda' if opts.cuda and torch.cuda.is_available() else 'cpu')
-    logger = Logger(prefix_path=os.path.dirname(os.path.realpath(__file__)) + '/logs', mode=opts.mode, quiet=opts.q)
+    logger = Logger(prefix_path=os.path.dirname(os.path.realpath(__file__)) + '/logs',
+                    mode=opts.mode,
+                    cleanup=True,
+                    quiet=opts.q)
     opponent = h_env.BasicOpponent(weak=False)
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
 
