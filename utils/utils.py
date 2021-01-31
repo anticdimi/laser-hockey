@@ -104,23 +104,35 @@ class Logger:
         self._plot(data, title, filename, show)
 
     def plot_intermediate_stats(self, data, show=True):
-        for key in data.keys():
+        self._plot((data["won"], data["lost"]), "Evaluation won vs loss", "evaluation-won-loss", show, ylim=(0, 1))
+
+        for key in data.keys() - ["won", "lost"]:
             title = f'Evaluation {key} mean'
-            filename = f'{key}.pdf'
+            filename = f'evaluation-{key}.pdf'
+
             self._plot(data[key], title, filename, show)
 
-    def _plot(self, data, title, filename=None, show=True):
+    def _plot(self, data, title, filename=None, show=True, ylim=None):
         plt.figure()
-        # data_np = np.asarray(data)
-        plt.plot(data)
+        # Plotting Won vs lost
+        if isinstance(data, tuple):
+            plt.plot(data[0], label="Won", color="blue")
+            plt.plot(data[1], label="Lost", color='red')
+            plt.ylim(*ylim)
+            plt.legend()
+        else:
+            plt.plot(data)
         plt.title(title)
 
         plt.savefig(self.plots_prefix_path.joinpath(filename).with_suffix('.pdf'))
         if show:
             plt.show()
+
         plt.close()
 
+    # TODO: REMOVE
     def clean_rew_dir(self):
+        print("This function will soon be deprecated")
         shutil.rmtree(self.reward_prefix_path, ignore_errors=True)
         self.reward_prefix_path.mkdir(exist_ok=True)
 

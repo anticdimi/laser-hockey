@@ -32,6 +32,7 @@ parser.add_argument('--change_lr_every', help='Change learning rate every # of e
 parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
 parser.add_argument('--lr_milestones', help='Learning rate milestones', nargs='+')
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
+parser.add_argument('--evaluate_every', help='Evaluate every # of episodes', type=int, default=1000)
 parser.add_argument('--discount', help='Discount', type=float, default=0.95)
 parser.add_argument('--epsilon', help='Epsilon', type=float, default=0.95)
 parser.add_argument('--epsilon_decay', help='Epsilon decay', type=float, default=0.9987)
@@ -57,7 +58,10 @@ if __name__ == '__main__':
         raise ValueError('Unknown training mode. See --help')
 
     opts.device = torch.device('cuda' if opts.cuda and torch.cuda.is_available() else 'cpu')
-    logger = Logger(prefix_path=os.path.dirname(os.path.realpath(__file__)) + '/logs', mode=opts.mode, quiet=opts.q)
+    logger = Logger(prefix_path=os.path.dirname(os.path.realpath(__file__)) + '/logs',
+                    mode=opts.mode,
+                    cleanup=True,
+                    quiet=opts.q)
     opponent = h_env.BasicOpponent(weak=False)
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
 

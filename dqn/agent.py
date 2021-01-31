@@ -77,6 +77,14 @@ class DQNAgent(Agent):
 
         self.target_Q = copy.deepcopy(self.Q)
 
+    def train(self):
+        self.Q.train()
+        self.target_Q.train()
+
+    def eval(self):
+        self.Q.eval()
+        self.target_Q.eval()
+
     def update_target_net(self):
         self.target_Q.load_state_dict(self.Q.state_dict())
 

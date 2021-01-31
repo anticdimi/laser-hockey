@@ -102,7 +102,7 @@ class SACTrainer:
 
             if episode_counter % self._config['evaluate_every'] == 0:
                 agent.eval()
-                rew, touch, won, lost = evaluate(agent, env, 50, quiet=True)
+                rew, touch, won, lost = evaluate(agent, env, self._config['eval_episodes'], quiet=True)
                 agent.train()
 
                 eval_stats['reward'].append(rew)
