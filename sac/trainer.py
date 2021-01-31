@@ -140,8 +140,6 @@ class SACTrainer:
         # Save agent
         self.logger.save_model(agent, 'agent.pkl')
 
-        # Log rew histograms
-        self.logger.clean_rew_dir()
         for reward_type, reward_values in rewards.items():
             self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
 
