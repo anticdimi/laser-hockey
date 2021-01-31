@@ -100,6 +100,8 @@ class SACTrainer:
                 obs_agent2 = env.obs_agent_two()
                 total_step_counter += 1
 
+            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
+
             if episode_counter % self._config['evaluate_every'] == 0:
                 agent.eval()
                 rew, touch, won, lost = evaluate(agent, env, self._config['eval_episodes'], quiet=True)
@@ -113,7 +115,6 @@ class SACTrainer:
 
             rew_stats.append(total_reward)
 
-            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
             if losses is not None:
                 agent.schedulers_step()
             episode_counter += 1

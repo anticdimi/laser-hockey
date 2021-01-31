@@ -70,7 +70,7 @@ class SACAgent(Agent):
             input_dims=obs_dim,
             learning_rate=self._config['learning_rate'],
             action_space=action_space,
-            hidden_sizes=[128],
+            hidden_sizes=[128, 128],
             lr_milestones=lr_milestones,
             lr_factor=self._config['lr_factor'],
             device=self._config['device']
@@ -80,7 +80,7 @@ class SACAgent(Agent):
             input_dim=obs_dim,
             n_actions=action_space.shape[0],
             learning_rate=self._config['learning_rate'],
-            hidden_sizes=[128],
+            hidden_sizes=[128, 128],
             lr_milestones=lr_milestones,
             lr_factor=self._config['lr_factor'],
             device=self._config['device']
@@ -90,7 +90,7 @@ class SACAgent(Agent):
             input_dim=obs_dim,
             n_actions=action_space.shape[0],
             learning_rate=self._config['learning_rate'],
-            hidden_sizes=[128],
+            hidden_sizes=[128, 128],
             lr_milestones=lr_milestones,
             device=self._config['device']
         )
