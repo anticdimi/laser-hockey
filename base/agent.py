@@ -61,9 +61,6 @@ class Agent(object):
     def store_transition(self, transition):
         self.buffer.add_transition(transition)
 
-    def evaluate(self, env, eval_episodes, action_mapping):
-        raise NotImplementedError('Implement evaluate method.')
-
     def _shooting_reward(
         self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched=0
     ):

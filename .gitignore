@@ -109,6 +109,7 @@ venv.bak/
 .DS_store/
 logs/
 ./**/logs/
+agents
 
 # custom files
 *.1
