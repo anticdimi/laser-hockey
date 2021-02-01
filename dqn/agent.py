@@ -103,11 +103,10 @@ class DQNAgent(Agent):
         return proxy_rewards.shooting_proxy(self, env, reward_game_outcome, reward_closeness_to_puck,
                                             reward_touch_puck, reward_puck_direction, touched)
 
-    def _defense_reward(
-        self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched
-    ):
+    def _defense_reward(self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck,
+                        reward_puck_direction, touched,step):
         return proxy_rewards.defense_proxy(self, env, reward_game_outcome, reward_closeness_to_puck,
-                                           reward_touch_puck, reward_puck_direction, touched)
+                                           reward_touch_puck, reward_puck_direction, touched, step)
 
     def train(self):
         losses = []

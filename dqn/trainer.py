@@ -23,7 +23,7 @@ class DQNTrainer:
         epsilon = self._config['epsilon']
         epsilon_decay = self._config['epsilon_decay']
         min_epsilon = self._config['min_epsilon']
-        episode_counter = 0
+        episode_counter = 1
         total_step_counter = 0
 
         rew_stats = []
@@ -40,7 +40,7 @@ class DQNTrainer:
             'lost': []
         }
 
-        while episode_counter < self._config['max_episodes']:
+        while episode_counter <= self._config['max_episodes']:
             ob = env.reset()
             obs_agent2 = env.obs_agent_two()
 
@@ -72,7 +72,8 @@ class DQNTrainer:
                 elif self._config['mode'] == 'shooting':
                     a2 = [0, 0, 0, 0]
                 else:
-                    raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
+                    a2 = agent.opponent.act(obs_agent2)
+                    # raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
 
                 (ob_new, reward, done, _info) = env.step(np.hstack([a1_discrete, a2]))
                 touched = max(touched, _info['reward_touch_puck'])
@@ -84,6 +85,7 @@ class DQNTrainer:
                     reward_touch_puck=_info['reward_touch_puck'],
                     reward_puck_direction=_info['reward_puck_direction'],
                     touched=touched,
+                    step=step
                 )
 
                 for reward_type, reward_value in reward_dict.items():
@@ -112,6 +114,7 @@ class DQNTrainer:
             self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon)
 
             if episode_counter % self._config['evaluate_every'] == 0:
+                self.logger.info("Evaluating agent")
                 agent.eval()
                 old_show = agent._config['show']
                 agent._config['show'] = False
@@ -156,7 +159,7 @@ class DQNTrainer:
             self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
 
         if run_evaluation:
-            agent._config['show'] = True
+            agent._config['show'] = False
             agent.eval()
             evaluate(agent=agent, env=env, eval_episodes=self._config['eval_episodes'], quiet=False,
                      action_mapping=action_mapping, evaluate_on_opposite_side=False)

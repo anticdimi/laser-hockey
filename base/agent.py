@@ -28,7 +28,7 @@ class Agent(object):
         self.logger = logger
 
         if userconfig['mode'] == 'normal':
-            self.reward_function = None
+            self.reward_function = self._defense_reward
             raise NotImplementedError('Mode normal not implemented')
         elif userconfig['mode'] == 'shooting':
             self.reward_function = self._shooting_reward

@@ -11,7 +11,6 @@ sys.path.insert(1, '..')
 from utils.utils import *
 from base.evaluator import evaluate
 
-
 parser = ArgumentParser()
 
 # Training params
