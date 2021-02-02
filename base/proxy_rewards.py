@@ -27,12 +27,14 @@ def defense_proxy(
 
     if reward_puck_direction < 0:
         reward_dict['closeness-reward'] = 10 * reward_closeness_to_puck
+    # elif reward_puck_direction == 0 and env.puck.position[0] < 5:
+    #     reward_dict['closeness-reward'] = 3 * existence
 
     if env.done:
         if env.winner == -1:
             reward_dict['outcome-reward'] = -50 - step * 0.5 * existence
         elif env.winner == 0:
-            reward_dict['outcome-reward'] = 15
+            reward_dict['outcome-reward'] = 0
         else:
             reward_dict['outcome-reward'] = (81 - step) * existence + 30    # Try + 60 factor
     return reward_dict

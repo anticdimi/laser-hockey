@@ -3,6 +3,7 @@ import numpy as np
 import time
 from base.evaluator import evaluate
 
+
 class DQNTrainer:
     """
     The DQNTrainer class implements a trainer for the DQNAgent.
@@ -45,13 +46,14 @@ class DQNTrainer:
             obs_agent2 = env.obs_agent_two()
 
             if (env.puck.position[0] < 5 and self._config['mode'] == 'defense') or (
-                env.puck.position[0] > 5 and self._config['mode'] == 'shooting'
-            ):
+                    env.puck.position[0] > 5 and self._config['mode'] == 'shooting') or (
+                    env.puck.position[0] < 5 and self._config['mode'] == 'normal'):
+                # TODO: Remove upper line when teaching to reach towards the ball
                 continue
 
             epsilon = max(epsilon_decay * epsilon, min_epsilon)
             if self._config['per']:
-                agent.update_per_beta(beta=1-epsilon)
+                agent.update_per_beta(beta=1 - epsilon)
 
             total_reward = 0
             touched = 0

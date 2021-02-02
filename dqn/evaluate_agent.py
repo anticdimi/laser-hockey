@@ -16,7 +16,7 @@ parser = ArgumentParser()
 # Training params
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--filename', help='Path to the pretrained model', default=None)
-parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | defense)', default='defense')
+parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | defense)', default='normal')
 parser.add_argument('--show', help='Set if want to render training process', action='store_true')
 parser.add_argument('--q', help='Quiet mode (no prints)', action='store_true')
 parser.add_argument('--opposite', help='Evaluate agent on opposite side', action='store_true')
