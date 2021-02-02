@@ -11,9 +11,8 @@ def shooting_proxy(
     return reward_dict
 
 
-def defense_proxy(
-    self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched, step
-):
+def defense_proxy(self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction,
+                  touched, step, max_allowed_steps):
     constants = self._factors[self._config['mode']]
 
     reward_dict = {}
@@ -27,14 +26,17 @@ def defense_proxy(
 
     if reward_puck_direction < 0:
         reward_dict['closeness-reward'] = 10 * reward_closeness_to_puck
-    # elif reward_puck_direction == 0 and env.puck.position[0] < 5:
-    #     reward_dict['closeness-reward'] = 3 * existence
+    elif reward_puck_direction == 0 and env.puck.position[0] < 5:
+        reward_dict['closeness-reward'] = - 10 * existence
 
     if env.done:
         if env.winner == -1:
             reward_dict['outcome-reward'] = -50 - step * 0.5 * existence
-        elif env.winner == 0:
-            reward_dict['outcome-reward'] = 0
-        else:
+        elif env.winner == 1:
             reward_dict['outcome-reward'] = (81 - step) * existence + 30    # Try + 60 factor
+
+    # draw
+    elif step == max_allowed_steps:
+        reward_dict['outcome-reward'] = 0
+
     return reward_dict

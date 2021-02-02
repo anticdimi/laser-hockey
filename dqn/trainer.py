@@ -32,7 +32,7 @@ class DQNTrainer:
         lost_stats = {}
         touch_stats = {}
         won_stats = {}
-        rewards = defaultdict(lambda: [])
+        # rewards = defaultdict(lambda: [])
 
         eval_stats = {
             'reward': [],
@@ -46,8 +46,7 @@ class DQNTrainer:
             obs_agent2 = env.obs_agent_two()
 
             if (env.puck.position[0] < 5 and self._config['mode'] == 'defense') or (
-                    env.puck.position[0] > 5 and self._config['mode'] == 'shooting') or (
-                    env.puck.position[0] < 5 and self._config['mode'] == 'normal'):
+                    env.puck.position[0] > 5 and self._config['mode'] == 'shooting'):
                 # TODO: Remove upper line when teaching to reach towards the ball
                 continue
 
@@ -61,7 +60,7 @@ class DQNTrainer:
             won_stats[episode_counter] = 0
             lost_stats[episode_counter] = 0
 
-            for step in range(self._config['max_steps']):
+            for step in range(1, self._config['max_steps'] + 1):
 
                 if total_step_counter % self._config['update_target_every'] == 0:
                     agent.update_target_net()
@@ -69,33 +68,32 @@ class DQNTrainer:
                 a1 = agent.act(ob, eps=epsilon)
                 a1_discrete = action_mapping(a1)
 
-                if self._config['mode'] == 'defense':
+                if self._config['mode'] in ['defense', 'normal']:
                     a2 = agent.opponent.act(obs_agent2)
                 elif self._config['mode'] == 'shooting':
                     a2 = [0, 0, 0, 0]
                 else:
-                    a2 = agent.opponent.act(obs_agent2)
-                    # raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
+                    raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
 
                 (ob_new, reward, done, _info) = env.step(np.hstack([a1_discrete, a2]))
                 touched = max(touched, _info['reward_touch_puck'])
 
-                reward_dict = agent.reward_function(
-                    env,
-                    reward_game_outcome=reward,
-                    reward_closeness_to_puck=_info['reward_closeness_to_puck'],
-                    reward_touch_puck=_info['reward_touch_puck'],
-                    reward_puck_direction=_info['reward_puck_direction'],
-                    touched=touched,
-                    step=step
-                )
+                # reward_dict = agent.reward_function(
+                #     env,
+                #     reward_game_outcome=reward,
+                #     reward_closeness_to_puck=_info['reward_closeness_to_puck'],
+                #     reward_touch_puck=_info['reward_touch_puck'],
+                #     reward_puck_direction=_info['reward_puck_direction'],
+                #     touched=touched,
+                #     step=step,
+                #     max_allowed_steps=self._config['max_steps']
+                # )
 
-                for reward_type, reward_value in reward_dict.items():
-                    rewards[reward_type].append(reward_value)
+                # for reward_type, reward_value in reward_dict.items():
+                #     rewards[reward_type].append(reward_value)
 
-                summed_reward = sum(list(reward_dict.values()))
-                total_reward += summed_reward
-                agent.store_transition((ob, a1, summed_reward, ob_new, done))
+                total_reward += reward
+                agent.store_transition((ob, a1, reward, ob_new, done))
 
                 if self._config['show']:
                     time.sleep(0.01)
@@ -156,9 +154,9 @@ class DQNTrainer:
         # Save model
         self.logger.save_model(agent, 'agent.pkl')
 
-        # Log rew histograms
-        for reward_type, reward_values in rewards.items():
-            self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
+        # # Log rew histograms
+        # for reward_type, reward_values in rewards.items():
+        #     self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
 
         if run_evaluation:
             agent._config['show'] = False
