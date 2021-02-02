@@ -17,8 +17,6 @@ class SACAgent(Agent):
 
     Parameters
     ----------
-    opponent: object
-        The variable the agent that is used as an opponent during training/evaluation.
     logger: Logger
         The variable specifies a logger for model management, plotting and printing.
     obs_dim: int
@@ -29,9 +27,8 @@ class SACAgent(Agent):
         The variable specifies the config settings.
     """
 
-    def __init__(self, opponent, logger, obs_dim, action_space, userconfig):
+    def __init__(self, logger, obs_dim, action_space, userconfig):
         super().__init__(
-            opponent=opponent,
             logger=logger,
             obs_dim=obs_dim,
             action_dim=action_space.shape[0],

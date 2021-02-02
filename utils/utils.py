@@ -4,6 +4,7 @@ from pathlib import Path
 import pickle
 import shutil
 from tabulate import tabulate
+import random
 
 
 def running_mean(x, N):
@@ -16,6 +17,11 @@ def soft_update(target, source, tau):
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(
             target_param.data * (1.0 - tau) + param.data * tau)
+
+
+def poll_opponent(opponents):
+    # TODO: Implement smarter polling
+    return random.choice(opponents)
 
 
 class Logger:

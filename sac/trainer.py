@@ -2,6 +2,8 @@ from collections import defaultdict
 import numpy as np
 import time
 from base.evaluator import evaluate
+from utils import utils
+from laserhockey import hockey_env as h_env
 
 
 class SACTrainer:
@@ -20,11 +22,10 @@ class SACTrainer:
         self.logger = logger
         self._config = config
 
-    def train(self, agent, env, run_evaluation):
+    def train(self, agent, opponents, env, run_evaluation):
         rew_stats, q1_losses, q2_losses, actor_losses, alpha_losses = [], [], [], [], []
 
         lost_stats, touch_stats, won_stats = {}, {}, {}
-        rewards = defaultdict(lambda: [])
         eval_stats = {
             'reward': [],
             'touch': [],
@@ -50,32 +51,30 @@ class SACTrainer:
 
             for step in range(self._config['max_steps']):
                 a1 = agent.act(ob)
+                opponent = utils.poll_opponent(opponents)
 
                 if self._config['mode'] == 'defense':
-                    a2 = agent.opponent.act(obs_agent2)
+                    a2 = opponent.act(obs_agent2)
                 elif self._config['mode'] == 'shooting':
                     a2 = np.zeros_like(a1)
                 else:
-                    raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
+                    a2 = opponent.act(obs_agent2)
+
                 actions = np.hstack([a1, a2])
                 ob_new, reward, done, _info = env.step(actions)
                 touched = max(touched, _info['reward_touch_puck'])
 
-                reward_dict = agent.reward_function(
-                    env,
-                    reward_game_outcome=reward,
-                    reward_closeness_to_puck=_info['reward_closeness_to_puck'],
-                    reward_touch_puck=_info['reward_touch_puck'],
-                    reward_puck_direction=_info['reward_puck_direction'],
-                    touched=touched,
-                )
+                # reward_dict = agent.reward_function(
+                #     env,
+                #     reward_game_outcome=reward,
+                #     reward_closeness_to_puck=_info['reward_closeness_to_puck'],
+                #     reward_touch_puck=_info['reward_touch_puck'],
+                #     reward_puck_direction=_info['reward_puck_direction'],
+                #     touched=touched,
+                # )
 
-                for reward_type, reward_value in reward_dict.items():
-                    rewards[reward_type].append(reward_value)
-
-                summed_reward = sum(list(reward_dict.values()))
-                total_reward += summed_reward
-                agent.store_transition((ob, a1, summed_reward, ob_new, done))
+                total_reward += reward
+                agent.store_transition((ob, a1, reward, ob_new, done))
 
                 losses = agent.update_parameters(total_step_counter)
                 if losses is not None:
@@ -141,10 +140,7 @@ class SACTrainer:
         # Save agent
         self.logger.save_model(agent, 'agent.pkl')
 
-        for reward_type, reward_values in rewards.items():
-            self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
-
         if run_evaluation:
             agent.eval()
             agent._config['show'] = True
-            evaluate(agent, env, self._config['eval_episodes'])
+            evaluate(agent, env, h_env.BasicOpponent(weak=False), self._config['eval_episodes'])

@@ -65,15 +65,15 @@ if __name__ == '__main__':
                     mode=opts.mode,
                     cleanup=True,
                     quiet=opts.q)
-    opponent = h_env.BasicOpponent(weak=False)
+
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
+    opponents = [h_env.BasicOpponent(weak=False), h_env.BasicOpponent(weak=False)]
 
     agent = SACAgent(
-        opponent=opponent,
         logger=logger,
         obs_dim=env.observation_space.shape,
         action_space=env.action_space,
         userconfig=vars(opts)
     )
     trainer = SACTrainer(logger, vars(opts))
-    trainer.train(agent, env, opts.evaluate)
+    trainer.train(agent, opponents, env, opts.evaluate)

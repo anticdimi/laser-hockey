@@ -11,8 +11,6 @@ class Agent(object):
 
     Parameters
     ----------
-    opponent: object
-        The variable the agent that is used as an opponent during training/evaluation.
     obs_dim: int
         The variable specifies the dimension of observation space vector.
     action_dim: int
@@ -23,13 +21,11 @@ class Agent(object):
         The variable specifies the config settings.
     """
 
-    def __init__(self, opponent, logger, obs_dim, action_dim, userconfig):
-        self.opponent = opponent
+    def __init__(self, logger, obs_dim, action_dim, userconfig):
         self.logger = logger
 
         if userconfig['mode'] == 'normal':
             self.reward_function = None
-            raise NotImplementedError('Mode normal not implemented')
         elif userconfig['mode'] == 'shooting':
             self.reward_function = self._shooting_reward
         elif userconfig['mode'] == 'defense':

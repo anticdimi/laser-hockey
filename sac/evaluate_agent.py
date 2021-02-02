@@ -38,4 +38,5 @@ if __name__ == '__main__':
     agent._config['show'] = opts.show
     env = h_env.HockeyEnv(mode=mode)
     agent.eval()
-    evaluate(agent, env, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
+    opponent = h_env.BasicOpponent(weak=False)
+    evaluate(agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
