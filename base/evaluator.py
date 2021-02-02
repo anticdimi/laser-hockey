@@ -22,6 +22,7 @@ def evaluate(agent, env, eval_episodes, quiet=False, action_mapping=None, evalua
 
         touch_stats[episode_counter] = 0
         won_stats[episode_counter] = 0
+        lost_stats[episode_counter] = 0
         for step in range(agent._config['max_steps']):
 
             if evaluate_on_opposite_side:
