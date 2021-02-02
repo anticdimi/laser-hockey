@@ -56,6 +56,7 @@ class DQNTrainer:
 
             total_reward = 0
             touched = 0
+            first_time_touch = 1
             touch_stats[episode_counter] = 0
             won_stats[episode_counter] = 0
             lost_stats[episode_counter] = 0
@@ -76,24 +77,16 @@ class DQNTrainer:
                     raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
 
                 (ob_new, reward, done, _info) = env.step(np.hstack([a1_discrete, a2]))
+
                 touched = max(touched, _info['reward_touch_puck'])
 
-                # reward_dict = agent.reward_function(
-                #     env,
-                #     reward_game_outcome=reward,
-                #     reward_closeness_to_puck=_info['reward_closeness_to_puck'],
-                #     reward_touch_puck=_info['reward_touch_puck'],
-                #     reward_puck_direction=_info['reward_puck_direction'],
-                #     touched=touched,
-                #     step=step,
-                #     max_allowed_steps=self._config['max_steps']
-                # )
+                step_reward = reward + 5 * _info['reward_closeness_to_puck'] - (1 - touched) * 0.1 + \
+                              touched * first_time_touch * 0.1 * step
 
-                # for reward_type, reward_value in reward_dict.items():
-                #     rewards[reward_type].append(reward_value)
+                first_time_touch = 1 - touched
 
-                total_reward += reward
-                agent.store_transition((ob, a1, reward, ob_new, done))
+                total_reward += step_reward
+                agent.store_transition((ob, a1, step_reward, ob_new, done))
 
                 if self._config['show']:
                     time.sleep(0.01)
@@ -111,7 +104,7 @@ class DQNTrainer:
                 obs_agent2 = env.obs_agent_two()
                 total_step_counter += 1
 
-            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon)
+            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon, touched)
 
             if episode_counter % self._config['evaluate_every'] == 0:
                 self.logger.info("Evaluating agent")

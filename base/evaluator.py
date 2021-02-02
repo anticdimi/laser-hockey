@@ -87,7 +87,8 @@ def evaluate(agent, env, eval_episodes, quiet=False, action_mapping=None, evalua
 
         rew_stats.append(total_reward)
         if not quiet:
-            agent.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon=0)
+            agent.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon=0,
+                                            touched=touch_stats[episode_counter])
 
     if not quiet:
         # Print evaluation stats
