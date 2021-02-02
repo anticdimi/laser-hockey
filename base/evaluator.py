@@ -95,8 +95,8 @@ def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=No
     env.verbose = old_verbose
 
     return (
-        np.around(np.mean(rew_stats), 3),
-        np.around(np.mean(list(touch_stats.values())), 3),
-        np.around(np.mean(list(won_stats.values())), 3),
-        np.around(np.mean(list(lost_stats.values())), 3)
+        np.mean(rew_stats),
+        np.mean(list(touch_stats.values())),
+        np.mean(list(won_stats.values())),
+        np.mean(list(lost_stats.values()))
     )

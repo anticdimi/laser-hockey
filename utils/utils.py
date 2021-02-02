@@ -70,7 +70,7 @@ class Logger:
         if not self.quiet:
             padding = 8 if game_outcome == 0 else 0
             msg_string = '{} {:>4}: Done after {:>3} steps. \tReward: {:<15}'.format(
-                " " * padding, episode_counter, step + 1, round(total_reward, 2))
+                " " * padding, episode_counter, step + 1, round(total_reward, 4))
             if epsilon is not None:
                 msg_string = '{}Epsilon: {:<15}'.format(msg_string, round(epsilon, 2))
 
