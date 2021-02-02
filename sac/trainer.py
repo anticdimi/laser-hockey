@@ -49,9 +49,9 @@ class SACTrainer:
             won_stats[episode_counter] = 0
             lost_stats[episode_counter] = 0
 
+            opponent = utils.poll_opponent(opponents)
             for step in range(self._config['max_steps']):
                 a1 = agent.act(ob)
-                opponent = utils.poll_opponent(opponents)
 
                 if self._config['mode'] == 'defense':
                     a2 = opponent.act(obs_agent2)
@@ -103,7 +103,11 @@ class SACTrainer:
 
             if episode_counter % self._config['evaluate_every'] == 0:
                 agent.eval()
-                rew, touch, won, lost = evaluate(agent, env, self._config['eval_episodes'], quiet=True)
+                rew, touch, won, lost = evaluate(agent,
+                                                 env,
+                                                 h_env.BasicOpponent(weak=False),
+                                                 self._config['eval_episodes'],
+                                                 quiet=True)
                 agent.train()
 
                 eval_stats['reward'].append(rew)
