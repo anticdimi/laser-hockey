@@ -16,7 +16,7 @@ def weights_init_(m):
 
 
 class CriticNetwork(nn.Module):
-    def __init__(self, input_dim, n_actions, learning_rate, device, loss='l2', hidden_sizes=[256, 256]):
+    def __init__(self, input_dim, n_actions, learning_rate, device, lr_milestones, lr_factor=0.5, loss='l2', hidden_sizes=[256, 256]):
         super(CriticNetwork, self).__init__()
         self.device = device
         layer_sizes = [input_dim[0] + n_actions] + hidden_sizes + [1]
@@ -32,6 +32,9 @@ class CriticNetwork(nn.Module):
         if device.type == 'cuda':
             self.cuda()
         self.optimizer = torch.optim.Adam(self.parameters(), lr=learning_rate)
+        self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            self.optimizer, milestones=lr_milestones, gamma=lr_factor
+        )
 
         if loss == 'l2':
             self.loss = nn.MSELoss()
@@ -55,9 +58,11 @@ class CriticNetwork(nn.Module):
 
         return x1, x2
 
+# Gaussian policy
+
 
 class ActorNetwork(Feedforward):
-    def __init__(self, input_dims, learning_rate, device,
+    def __init__(self, input_dims, learning_rate, device, lr_milestones, lr_factor=0.5,
                  action_space=None, hidden_sizes=[256, 256], reparam_noise=1e-6):
         super().__init__(
             input_size=input_dims[0],
@@ -68,21 +73,24 @@ class ActorNetwork(Feedforward):
 
         self.reparam_noise = reparam_noise
         self.action_space = action_space
-        n_actions = action_space.shape[0]
+        n_actions = 4
 
         self.mu = nn.Linear(hidden_sizes[-1], n_actions)
         self.sigma = nn.Linear(hidden_sizes[-1], n_actions)
 
         self.learning_rate = learning_rate
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, eps=0.000001)
+        self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            self.optimizer, milestones=lr_milestones, gamma=lr_factor
+        )
 
         if self.action_space is not None:
             self.action_scale = torch.FloatTensor(
-                (action_space.high - action_space.low) / 2.
+                (action_space.high[:n_actions] - action_space.low[:n_actions]) / 2.
             ).to(self.device)
 
             self.action_bias = torch.FloatTensor(
-                (action_space.high + action_space.low) / 2.
+                (action_space.high[:n_actions] + action_space.low[:n_actions]) / 2.
             ).to(self.device)
         else:
             self.action_scale = torch.tensor(1.).to(self.device)

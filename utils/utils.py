@@ -4,6 +4,7 @@ from pathlib import Path
 import pickle
 import shutil
 from tabulate import tabulate
+import random
 
 
 def running_mean(x, N):
@@ -12,10 +13,20 @@ def running_mean(x, N):
 
 
 def soft_update(target, source, tau):
-
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(
-            target_param.data * (1.0 - tau) + param.data * tau)
+            target_param.data * (1.0 - tau) + param.data * tau
+        )
+
+
+def hard_update(target, source):
+    for target_param, param in zip(target.parameters(), source.parameters()):
+        target_param.data.copy_(param.data)
+
+
+def poll_opponent(opponents):
+    # TODO: Implement smarter polling
+    return random.choice(opponents)
 
 
 class Logger:
@@ -28,22 +39,34 @@ class Logger:
         The variable is used for specifying the root of the path where the plots and models are saved.
     mode: str
         The variable specifies in which mode we are currently running. (shooting | defense | normal)
+    cleanup: bool
+        The variable specifies whether the logging folder should be cleaned up.
     quiet: boolean
         This variable is used to specify whether the prints are hidden or not.
     """
 
-    def __init__(self, prefix_path, mode, quiet=False) -> None:
+    def __init__(self, prefix_path, mode, cleanup=False, quiet=False) -> None:
         self.prefix_path = Path(prefix_path)
-        self.reward_prefix_path = self.prefix_path.joinpath('rewards')
+
+        self.agents_prefix_path = self.prefix_path.joinpath('agents')
+        self.plots_prefix_path = self.prefix_path.joinpath('plots')
+
         self.prefix_path.mkdir(exist_ok=True)
-        self.reward_prefix_path.mkdir(exist_ok=True)
+
+        if cleanup:
+            self._cleanup()
+
         self.quiet = quiet
 
         if not self.quiet:
             print(f"Running in mode: {mode}")
 
+    # TODO: add logging to file if needed
+    def info(self, message):
+        print(message)
+
     def save_model(self, model, filename):
-        savepath = self.prefix_path.joinpath(filename).with_suffix('.pkl')
+        savepath = self.agents_prefix_path.joinpath(filename).with_suffix('.pkl')
         with open(savepath, 'wb') as outp:
             pickle.dump(model, outp, pickle.HIGHEST_PROTOCOL)
 
@@ -51,7 +74,7 @@ class Logger:
         if not self.quiet:
             padding = 8 if game_outcome == 0 else 0
             msg_string = '{} {:>4}: Done after {:>3} steps. \tReward: {:<15}'.format(
-                " " * padding, episode_counter, step + 1, round(total_reward, 2))
+                " " * padding, episode_counter, step + 1, round(total_reward, 4))
             if epsilon is not None:
                 msg_string = '{}Epsilon: {:<15}'.format(msg_string, round(epsilon, 2))
 
@@ -66,7 +89,7 @@ class Logger:
 
     def load_model(self, filename):
         if filename is None:
-            load_path = self.prefix_path.joinpath('agent.pkl')
+            load_path = self.agents_prefix_path.joinpath('agent.pkl')
         else:
             load_path = Path(filename)
         with open(load_path, 'rb') as inp:
@@ -90,17 +113,41 @@ class Logger:
     def plot(self, data, title, filename=None, show=True):
         self._plot(data, title, filename, show)
 
-    def _plot(self, data, title, filename=None, show=True):
+    def plot_intermediate_stats(self, data, show=True):
+        self._plot((data["won"], data["lost"]), "Evaluation won vs loss", "evaluation-won-loss", show, ylim=(0, 1))
+
+        for key in data.keys() - ["won", "lost"]:
+            title = f'Evaluation {key} mean'
+            filename = f'evaluation-{key}.pdf'
+
+            self._plot(data[key], title, filename, show)
+
+    def _plot(self, data, title, filename=None, show=True, ylim=None):
         plt.figure()
-        # data_np = np.asarray(data)
-        plt.plot(data)
+        # Plotting Won vs lost
+        if isinstance(data, tuple):
+            plt.plot(data[0], label="Won", color="blue")
+            plt.plot(data[1], label="Lost", color='red')
+            plt.ylim(*ylim)
+            plt.legend()
+        else:
+            plt.plot(data)
         plt.title(title)
 
-        plt.savefig(self.prefix_path.joinpath(filename).with_suffix('.pdf'))
+        plt.savefig(self.plots_prefix_path.joinpath(filename).with_suffix('.pdf'))
         if show:
             plt.show()
+
         plt.close()
 
+    # TODO: REMOVE
     def clean_rew_dir(self):
+        print("This function will soon be deprecated")
         shutil.rmtree(self.reward_prefix_path, ignore_errors=True)
         self.reward_prefix_path.mkdir(exist_ok=True)
+
+    def _cleanup(self):
+        shutil.rmtree(self.agents_prefix_path, ignore_errors=True)
+        shutil.rmtree(self.plots_prefix_path, ignore_errors=True)
+        self.agents_prefix_path.mkdir(exist_ok=True)
+        self.plots_prefix_path.mkdir(exist_ok=True)

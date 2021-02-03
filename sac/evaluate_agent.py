@@ -37,4 +37,6 @@ if __name__ == '__main__':
     # TODO: refactor
     agent._config['show'] = opts.show
     env = h_env.HockeyEnv(mode=mode)
-    evaluate(agent, env, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
+    agent.eval()
+    opponent = h_env.BasicOpponent(weak=False)
+    evaluate(agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
