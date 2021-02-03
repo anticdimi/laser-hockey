@@ -122,7 +122,7 @@ class DQNTrainer:
                 eval_stats['lost'].append(lost)
                 self.logger.save_model(agent, f'a-{episode_counter}.pkl')
 
-            loss_stats.extend(agent.train())
+            loss_stats.extend(agent.train_model())
             rew_stats.append(total_reward)
 
             episode_counter += 1
@@ -151,8 +151,8 @@ class DQNTrainer:
         # for reward_type, reward_values in rewards.items():
         #     self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
 
-        if run_evaluation:
-            agent._config['show'] = False
-            agent.eval()
-            evaluate(agent=agent, env=env, eval_episodes=self._config['eval_episodes'], quiet=False,
-                     action_mapping=action_mapping, evaluate_on_opposite_side=False)
+        # if run_evaluation:
+        #     agent._config['show'] = False
+        #     agent.eval()
+        #     evaluate(agent=agent, env=env, eval_episodes=self._config['eval_episodes'], quiet=False,
+        #              action_mapping=action_mapping, evaluate_on_opposite_side=False)

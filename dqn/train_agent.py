@@ -24,15 +24,15 @@ parser.add_argument('--mode', help='Mode for training currently: (shooting | def
 
 # Training params
 parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=10_000)
-parser.add_argument('--max_steps', help='Max steps for training', type=int, default=160)
+parser.add_argument('--max_steps', help='Max steps for training', type=int, default=250)
 parser.add_argument('--iter_fit', help='Iter fit', type=int, default=32)
 parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=500)
 parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.000125)
-parser.add_argument('--change_lr_every', help='Change learning rate every # of episodes', type=int, default=1000)
+parser.add_argument('--change_lr_every', help='Change learning rate every # of episodes', type=int, default=1_000)
 parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
 parser.add_argument('--lr_milestones', help='Learning rate milestones', nargs='+')
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=100)
-parser.add_argument('--evaluate_every', help='Evaluate every # of episodes', type=int, default=500)
+parser.add_argument('--evaluate_every', help='Evaluate every # of episodes', type=int, default=2_000)
 parser.add_argument('--discount', help='Discount', type=float, default=0.95)
 parser.add_argument('--epsilon', help='Epsilon', type=float, default=0.95)
 parser.add_argument('--epsilon_decay', help='Epsilon decay', type=float, default=0.996)
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         opponent=opponent,
         logger=logger,
         obs_dim=env.observation_space.shape[0],
-        action_dim=env.action_space.shape[0],
+        action_dim=len(CUSTOM_DISCRETE_ACTIONS),
         CUSTOM_DISCRETE_ACTIONS=CUSTOM_DISCRETE_ACTIONS,
         userconfig=vars(opts)
     )

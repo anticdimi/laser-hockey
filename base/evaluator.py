@@ -33,13 +33,12 @@ def evaluate(agent, env, eval_episodes, quiet=False, action_mapping=None, evalua
                 else:
                     a2 = agent.act(obs_agent2)
 
-                if agent._config['mode'] == 'defense':
+                if agent._config['mode'] in ['defense', 'normal']:
                     a1 = agent.opponent.act(ob)
                 elif agent._config['mode'] == 'shooting':
                     a1 = [0, 0, 0, 0]
                 else:
-                    a1 = agent.opponent.act(ob)
-                    # raise NotImplementedError(f'Training for {agent._config["mode"]} not implemented.')
+                    raise NotImplementedError(f'Training for {agent._config["mode"]} not implemented.')
 
             else:
                 if action_mapping is not None:
@@ -50,13 +49,12 @@ def evaluate(agent, env, eval_episodes, quiet=False, action_mapping=None, evalua
                     # SAC act
                     a1 = agent.act(ob)
 
-                if agent._config['mode'] == 'defense':
+                if agent._config['mode'] in ['defense', 'normal']:
                     a2 = agent.opponent.act(obs_agent2)
                 elif agent._config['mode'] == 'shooting':
                     a2 = [0, 0, 0, 0]
                 else:
-                    a2 = agent.opponent.act(obs_agent2)
-                    # raise NotImplementedError(f'Training for {agent._config["mode"]} not implemented.')
+                    raise NotImplementedError(f'Training for {agent._config["mode"]} not implemented.')
 
             (ob_new, reward, done, _info) = env.step(np.hstack([a1, a2]))
             ob = ob_new

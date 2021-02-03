@@ -65,8 +65,8 @@ class DQNAgent(Agent):
                                    step=self._config['change_lr_every'])[1:]
 
         self.Q = QFunction(
-            obs_dim,
-            len(self.CUSTOM_DISCRETE_ACTIONS),
+            observation_dim=obs_dim,
+            action_dim=action_dim,
             hidden_sizes=self._config['hidden_sizes'],
             learning_rate=self._config['learning_rate'],
             lr_milestones=milestones,
@@ -104,11 +104,11 @@ class DQNAgent(Agent):
                                             reward_touch_puck, reward_puck_direction, touched)
 
     def _defense_reward(self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck,
-                        reward_puck_direction, touched,step):
+                        reward_puck_direction, touched, step):
         return proxy_rewards.defense_proxy(self, env, reward_game_outcome, reward_closeness_to_puck,
                                            reward_touch_puck, reward_puck_direction, touched, step)
 
-    def train(self):
+    def train_model(self):
         losses = []
         for i in range(self._config['iter_fit']):
             data = self.buffer.sample(batch_size=self._config['batch_size'])
