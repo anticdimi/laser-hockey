@@ -12,7 +12,7 @@ parser = ArgumentParser()
 
 # Training params
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=1000)
-parser.add_argument('--filename', help='Path to the pretrained model', default='logs/agent_10k_60_zafirsrew.pkl')
+parser.add_argument('--filename', help='Path to the pretrained model', default=None)
 parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | defense)', default='normal')
 parser.add_argument('--show', help='Set if want to render training process', action='store_true', default=False)
 parser.add_argument('--q', help='Quiet mode (no prints)', action='store_true')
@@ -33,7 +33,7 @@ if __name__ == '__main__':
     logger = Logger(os.path.dirname(os.path.realpath(__file__)) + '/logs', mode=opts.mode, quiet=opts.q)
     q_agent = logger.load_model(opts.filename)
     q_agent._config['show'] = opts.show
-    # q_agent._config['opponent'] = h_env.BasicOpponent(weak=False)
     env = h_env.HockeyEnv(mode=mode)
     q_agent.eval()
-    evaluate(q_agent, env, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
+    opponent = h_env.BasicOpponent(weak=False)
+    evaluate(q_agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
