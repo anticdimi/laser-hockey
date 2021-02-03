@@ -11,8 +11,6 @@ class Agent(object):
 
     Parameters
     ----------
-    opponent: object
-        The variable the agent that is used as an opponent during training/evaluation.
     obs_dim: int
         The variable specifies the dimension of observation space vector.
     action_dim: int
@@ -23,18 +21,10 @@ class Agent(object):
         The variable specifies the config settings.
     """
 
-    def __init__(self, opponent, logger, obs_dim, action_dim, userconfig):
-        self.opponent = opponent
+    def __init__(self, logger, obs_dim, action_dim, userconfig):
         self.logger = logger
 
-        if userconfig['mode'] == 'normal':
-            self.reward_function = self._defense_reward
-            # raise NotImplementedError('Mode normal not implemented')
-        elif userconfig['mode'] == 'shooting':
-            self.reward_function = self._shooting_reward
-        elif userconfig['mode'] == 'defense':
-            self.reward_function = self._defense_reward
-        else:
+        if userconfig['mode'] not in ['normal', 'shooting', 'defense']:
             raise ValueError('Unknown training mode. See --help')
 
         self._config = {
@@ -60,16 +50,6 @@ class Agent(object):
 
     def store_transition(self, transition):
         self.buffer.add_transition(transition)
-
-    def _shooting_reward(
-        self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched=0
-    ):
-        raise NotImplementedError('Implement proxy reward methods.')
-
-    def _defense_reward(
-        self, env, reward_game_outcome, reward_closeness_to_puck, reward_touch_puck, reward_puck_direction, touched
-    ):
-        raise NotImplementedError('Implement proxy reward methods.')
 
     def train(self):
         raise NotImplementedError('Implement train methods.')
