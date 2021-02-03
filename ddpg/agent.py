@@ -6,6 +6,7 @@ import torch
 from ddpg.models import Actor, Critic
 from base.experience_replay import UniformExperienceReplay
 import time
+from utils.utils import soft_update
 
 sys.path.insert(0, '..')
 
@@ -64,32 +65,50 @@ class DDPGAgent(Agent):
                 'existence': 1,
                 'factor_touch': 200,
             },
-            'normal': {},
+            'normal': {
+                'factor_closeness': 130,
+                'outcome': 30,
+                'existence': 1,
+                'factor_touch': 200},
         }
         self._config.update(userconfig)
         self._eps = self._config['eps']
         self._tau = self._config['tau']
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.buffer = UniformExperienceReplay(max_size=self._config["buffer_size"])
+        self.eval_mode = False
 
+        if self._config['lr_milestones'] is None:
+            raise ValueError('lr_milestones argument cannot be None!\nExample: --lr_milestones=100 200 300')
+
+        #lr_milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
+        lr_milestones = self._config['lr_milestones']
         # Critic
         self.critic = Critic(self._observation_dim, self._action_n,
                              hidden_sizes=self._config['hidden_sizes'],
                              learning_rate=self._config['learning_rate_critic'],
+                             lr_milestones=lr_milestones,
+                             lr_factor=self._config['lr_factor'],
                              device=self._config['device'])
         self.critic_target = Critic(self._observation_dim, self._action_n,
                                     hidden_sizes=self._config['hidden_sizes'],
                                     learning_rate=self._config['learning_rate_critic'],
+                                    lr_milestones=lr_milestones,
+                                    lr_factor=self._config['lr_factor'],
                                     device=self._config['device'])
 
         # Actor
         self.actor = Actor(self._observation_dim, self._action_n,
                            hidden_sizes=self._config['hidden_sizes'],
                            learning_rate=self._config['learning_rate_actor'],
+                           lr_milestones=lr_milestones,
+                           lr_factor=self._config['lr_factor'],
                            device=self._config['device'])
         self.actor_target = Actor(self._observation_dim, self._action_n,
                                   hidden_sizes=self._config['hidden_sizes'],
                                   learning_rate=self._config['learning_rate_actor'],
+                                  lr_milestones=lr_milestones,
+                                  lr_factor=self._config['lr_factor'],
                                   device=self._config['device'])
 
     def _shooting_reward(
@@ -105,18 +124,31 @@ class DDPGAgent(Agent):
         return proxy_rewards.defense_proxy(self, env, reward_game_outcome, reward_closeness_to_puck,
                                            reward_touch_puck, reward_puck_direction, touched)
 
-    def act(self, observation, eps=None):
+    def eval(self):
+        self.eval_mode = True
+
+    def train_mode(self):
+        self.eval_mode = False
+
+    def act(self, observation, eps=0, evaluation=False):
         state = torch.from_numpy(observation).float().to(self.device)
         if eps is None:
             eps = self._eps
-        if np.random.random() > eps:
+
+        if np.random.random() > eps and not evaluation:
 
             action = self.actor.forward(state)
             action = action.detach().cpu().numpy()[0]
         else:
-            action = self._action_space.sample()
+            action = self._action_space.sample()[:4]
 
         return action
+
+    def schedulers_step(self):
+        self.critic.lr_scheduler.step()
+        self.critic_target.lr_scheduler.step()
+        self.actor.lr_scheduler.step()
+        self.actor_target.lr_scheduler.step()
 
     def store_transition(self, transition):
         self.buffer.add_transition(transition)
@@ -125,7 +157,7 @@ class DDPGAgent(Agent):
         for target_param, local_param in zip(target.parameters(), model.parameters()):
             target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
 
-    def train(self, iter_fit=32):
+    def train(self, total_step_counter, iter_fit=32):
         losses = []
 
         for i in range(iter_fit):
@@ -137,7 +169,6 @@ class DDPGAgent(Agent):
             s_next = torch.FloatTensor(
                 np.stack(data[:, 3])
             ).to(self.device)
-
             a = torch.FloatTensor(
                 np.stack(data[:, 1])[:, None]
             ).squeeze(dim=1).to(self.device)
@@ -174,60 +205,9 @@ class DDPGAgent(Agent):
             self.actor.optimizer.step()
 
             # update
-            self.soft_update(self.critic, self.critic_target, self._tau)
-            self.soft_update(self.actor, self.actor_target, self._tau)
+            if (total_step_counter * iter_fit + i + 1) % self._config['update_target_every'] == 0:
+
+                soft_update(self.critic_target, self.critic, self._tau)
+                soft_update( self.actor_target,self.actor, self._tau)
 
         return losses
-
-    def evaluate(self, env, eval_episodes):
-
-        rew_stats = []
-        touch_stats = {}
-        won_stats = {}
-        lost_stats = {}
-
-        for episode_counter in range(eval_episodes):
-            total_reward = 0
-            ob = env.reset()
-            obs_agent2 = env.obs_agent_two()
-
-            if (env.puck.position[0] < 5 and self._config['mode'] == 'defense') or (
-                    env.puck.position[0] > 5 and self._config['mode'] == 'shooting'
-            ):
-                continue
-
-            touch_stats[episode_counter] = 0
-            won_stats[episode_counter] = 0
-
-            for step in range(self._config['max_steps']):
-                a1 = self.act(ob, eps=0)
-
-                if self._config['mode'] == 'defense':
-                    a2 = self.opponent.act(obs_agent2)
-                elif self._config['mode'] == 'shooting':
-                    a2 = [0, 0, 0, 0]
-                else:
-                    raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
-
-                (ob_new, reward, done, _info) = env.step(np.hstack([a1, a2]))
-
-                if _info['reward_touch_puck'] > 0:
-                    touch_stats[episode_counter] = 1
-
-                total_reward += reward
-                ob = ob_new
-                obs_agent2 = env.obs_agent_two()
-                if self._config['show']:
-                    time.sleep(0.01)
-                    env.render()
-                if done:
-                    won_stats[episode_counter] = 1 if env.winner == 1 else 0
-                    lost_stats[episode_counter] = 1 if env.winner == -1 else 0
-                    break
-
-            rew_stats.append(total_reward)
-
-            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon=None)
-
-        # Print evaluation stats
-        self.logger.print_stats(rew_stats, touch_stats, won_stats, lost_stats)
