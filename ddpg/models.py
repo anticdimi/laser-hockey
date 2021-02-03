@@ -3,7 +3,8 @@ import numpy as np
 
 
 class Actor(torch.nn.Module):
-    def __init__(self, num_inputs, n_actions, device, learning_rate, hidden_sizes=[256, 256]):
+    def __init__(self, num_inputs, n_actions, device, learning_rate, lr_milestones, lr_factor=0.5,
+                 hidden_sizes=[256, 256]):
         super(Actor, self).__init__()
 
         self.num_inputs = num_inputs
@@ -11,7 +12,7 @@ class Actor(torch.nn.Module):
 
         self.linear1 = torch.nn.Linear(num_inputs[0], hidden_sizes[0])
         self.linear2 = torch.nn.Linear(hidden_sizes[0], hidden_sizes[1])
-        self.linear3 = torch.nn.Linear(hidden_sizes[1], n_actions)
+        self.linear3 = torch.nn.Linear(hidden_sizes[1], 4)
 
         self.device = device
         if device.type == 'cuda':
@@ -20,6 +21,9 @@ class Actor(torch.nn.Module):
         self.optimizer = torch.optim.Adam(self.parameters(),
                                           lr=learning_rate,
                                           eps=0.000001)
+        self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            self.optimizer, milestones=lr_milestones, gamma=lr_factor
+        )
 
     def forward(self, x):
         if not isinstance(x, np.ndarray):
@@ -37,13 +41,14 @@ class Actor(torch.nn.Module):
 
 
 class Critic(torch.nn.Module):
-    def __init__(self, num_inputs, n_actions, device, learning_rate, hidden_sizes=[256, 256]):
+    def __init__(self, num_inputs, n_actions, device, learning_rate, lr_milestones, lr_factor=0.5,
+                 hidden_sizes=[256, 256]):
         super(Critic, self).__init__()
 
         self.num_inputs = num_inputs
         self.n_actions = n_actions
 
-        self.linear1 = torch.nn.Linear(num_inputs[0] + n_actions, hidden_sizes[0])
+        self.linear1 = torch.nn.Linear(num_inputs[0] + 4, hidden_sizes[0])
         self.linear2 = torch.nn.Linear(hidden_sizes[0], hidden_sizes[1])
         self.linear3 = torch.nn.Linear(hidden_sizes[1], 1)
 
@@ -54,7 +59,9 @@ class Critic(torch.nn.Module):
         self.optimizer = torch.optim.Adam(self.parameters(),
                                           lr=learning_rate,
                                           eps=0.000001)
-
+        self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            self.optimizer, milestones=lr_milestones, gamma=lr_factor
+        )
         self.loss = torch.nn.MSELoss()
 
     def forward(self, state, action):
