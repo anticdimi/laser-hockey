@@ -2,7 +2,7 @@ import time
 import numpy as np
 
 
-def evaluate(agent, env, eval_episodes, quiet=False, action_mapping=None, evaluate_on_opposite_side=False):
+def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=None, evaluate_on_opposite_side=False):
     old_verbose = env.verbose
     env.verbose = not quiet
 
@@ -34,7 +34,7 @@ def evaluate(agent, env, eval_episodes, quiet=False, action_mapping=None, evalua
                     a2 = agent.act(obs_agent2)
 
                 if agent._config['mode'] == 'defense':
-                    a1 = agent.opponent.act(ob)
+                    a1 = opponent.act(ob)
                 elif agent._config['mode'] == 'shooting':
                     a1 = [0, 0, 0, 0]
                 else:
@@ -50,11 +50,11 @@ def evaluate(agent, env, eval_episodes, quiet=False, action_mapping=None, evalua
                     a1 = agent.act(ob)
 
                 if agent._config['mode'] == 'defense':
-                    a2 = agent.opponent.act(obs_agent2)
+                    a2 = opponent.act(obs_agent2)
                 elif agent._config['mode'] == 'shooting':
                     a2 = [0, 0, 0, 0]
                 else:
-                    raise NotImplementedError(f'Training for {agent._config["mode"]} not implemented.')
+                    a2 = opponent.act(obs_agent2)
 
             (ob_new, reward, done, _info) = env.step(np.hstack([a1, a2]))
             ob = ob_new
@@ -95,8 +95,8 @@ def evaluate(agent, env, eval_episodes, quiet=False, action_mapping=None, evalua
     env.verbose = old_verbose
 
     return (
-        np.around(np.mean(rew_stats), 3),
-        np.around(np.mean(list(touch_stats.values())), 3),
-        np.around(np.mean(list(won_stats.values())), 3),
-        np.around(np.mean(list(lost_stats.values())), 3)
+        np.mean(rew_stats),
+        np.mean(list(touch_stats.values())),
+        np.mean(list(won_stats.values())),
+        np.mean(list(lost_stats.values()))
     )
