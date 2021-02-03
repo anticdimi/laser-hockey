@@ -58,6 +58,8 @@ class CriticNetwork(nn.Module):
 
         return x1, x2
 
+# Gaussian policy
+
 
 class ActorNetwork(Feedforward):
     def __init__(self, input_dims, learning_rate, device, lr_milestones, lr_factor=0.5,

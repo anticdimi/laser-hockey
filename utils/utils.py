@@ -13,10 +13,15 @@ def running_mean(x, N):
 
 
 def soft_update(target, source, tau):
-
     for target_param, param in zip(target.parameters(), source.parameters()):
         target_param.data.copy_(
-            target_param.data * (1.0 - tau) + param.data * tau)
+            target_param.data * (1.0 - tau) + param.data * tau
+        )
+
+
+def hard_update(target, source):
+    for target_param, param in zip(target.parameters(), source.parameters()):
+        target_param.data.copy_(param.data)
 
 
 def poll_opponent(opponents):
@@ -43,7 +48,6 @@ class Logger:
     def __init__(self, prefix_path, mode, cleanup=False, quiet=False) -> None:
         self.prefix_path = Path(prefix_path)
 
-        self.reward_prefix_path = self.prefix_path.joinpath('rewards')
         self.agents_prefix_path = self.prefix_path.joinpath('agents')
         self.plots_prefix_path = self.prefix_path.joinpath('plots')
 
@@ -143,9 +147,7 @@ class Logger:
         self.reward_prefix_path.mkdir(exist_ok=True)
 
     def _cleanup(self):
-        shutil.rmtree(self.reward_prefix_path, ignore_errors=True)
         shutil.rmtree(self.agents_prefix_path, ignore_errors=True)
         shutil.rmtree(self.plots_prefix_path, ignore_errors=True)
-        self.reward_prefix_path.mkdir(exist_ok=True)
         self.agents_prefix_path.mkdir(exist_ok=True)
         self.plots_prefix_path.mkdir(exist_ok=True)

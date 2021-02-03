@@ -1,4 +1,3 @@
-from collections import defaultdict
 import numpy as np
 import time
 from base.evaluator import evaluate
@@ -39,17 +38,14 @@ class SACTrainer:
             ob = env.reset()
             obs_agent2 = env.obs_agent_two()
 
-            if (env.puck.position[0] < 5 and self._config['mode'] == 'defense') or (
-                env.puck.position[0] > 5 and self._config['mode'] == 'shooting'
-            ):
-                continue
-
             total_reward, touched = 0, 0
             touch_stats[episode_counter] = 0
             won_stats[episode_counter] = 0
             lost_stats[episode_counter] = 0
 
             opponent = utils.poll_opponent(opponents)
+
+            first_time_touch = 1
             for step in range(self._config['max_steps']):
                 a1 = agent.act(ob)
 
@@ -61,20 +57,21 @@ class SACTrainer:
                     a2 = opponent.act(obs_agent2)
 
                 actions = np.hstack([a1, a2])
-                ob_new, reward, done, _info = env.step(actions)
+                next_state, reward, done, _info = env.step(actions)
+
                 touched = max(touched, _info['reward_touch_puck'])
 
-                # reward_dict = agent.reward_function(
-                #     env,
-                #     reward_game_outcome=reward,
-                #     reward_closeness_to_puck=_info['reward_closeness_to_puck'],
-                #     reward_touch_puck=_info['reward_touch_puck'],
-                #     reward_puck_direction=_info['reward_puck_direction'],
-                #     touched=touched,
-                # )
+                step_reward = (
+                    reward
+                    + 5 * _info['reward_closeness_to_puck']
+                    - (1 - touched) * 0.1
+                    + touched * first_time_touch * 0.1 * step
+                )
+                first_time_touch = 1 - touched
 
-                total_reward += reward
-                agent.store_transition((ob, a1, reward, ob_new, done))
+                total_reward += step_reward
+
+                agent.store_transition((ob, a1, step_reward, next_state, done))
 
                 losses = agent.update_parameters(total_step_counter)
                 if losses is not None:
@@ -95,7 +92,7 @@ class SACTrainer:
                     lost_stats[episode_counter] = 1 if env.winner == -1 else 0
                     break
 
-                ob = ob_new
+                ob = next_state
                 obs_agent2 = env.obs_agent_two()
                 total_step_counter += 1
 
