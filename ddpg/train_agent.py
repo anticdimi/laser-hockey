@@ -19,12 +19,12 @@ parser.add_argument('--evaluate', help='Set if want to evaluate agent after the 
 parser.add_argument('--mode', help='Mode for training currently: (shooting | defense | normal)', default='normal')
 
 # Training params
-parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=5000)
+parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=500)
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=250)
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 
 parser.add_argument('--evaluate_every',
-                    help='# of episodes between evaluating agent during the training', type=int, default=1000)
+                    help='# of episodes between evaluating agent during the training', type=int, default=500)
 parser.add_argument('--learning_rate_actor', help='Learning rate', type=float, default=3e-4)
 parser.add_argument('--learning_rate_critic', help='Learning rate', type=float, default=3e-4)
 parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
@@ -33,7 +33,7 @@ parser.add_argument('--discount', help='Discount', type=float, default=0.95)
 parser.add_argument('--eps', help='Epsilon', type=float, default=0.95)
 parser.add_argument('--epsilon_decay', help='Epsilon decay', type=float, default=0.9987)
 parser.add_argument('--min_epsilon', help='min_epsilon', type=float, default=0.07)
-parser.add_argument('--iter_fit', help='fit every n iterations', type=float, default=10)
+parser.add_argument('--iter_fit', help='fit every n iterations', type=float, default=1)
 parser.add_argument('--batch_size', help='batch_size', type=int, default=128)
 parser.add_argument('--tau', help='tau', type=float, default=0.005)
 parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=10)
@@ -57,17 +57,16 @@ if __name__ == '__main__':
     opts.device = torch.device('cuda' if opts.cuda and torch.cuda.is_available() else 'cpu')
     logger = Logger(prefix_path=os.path.dirname(os.path.realpath(__file__)) + '/logs',
                     mode=opts.mode,
-                    cleanup=True,
+                    cleanup=False,
                     quiet=opts.q)
-    opponent = h_env.BasicOpponent(weak=False)
+    opponents = [h_env.BasicOpponent(weak=False)]
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
 
     agent = DDPGAgent(
-        opponent=opponent,
         logger=logger,
         obs_dim=env.observation_space.shape,
         action_space=env.action_space,
         userconfig=vars(opts)
     )
     trainer = DDPGTrainer(logger, vars(opts))
-    trainer.train(agent, env, opts.evaluate)
+    trainer.train(agent, opponents, env, opts.evaluate)
