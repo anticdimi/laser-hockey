@@ -6,6 +6,8 @@ from importlib import reload
 from argparse import ArgumentParser
 import sys
 from trainer import SACTrainer
+import time
+import random
 
 # TODO: fix if possible, not the best way of importing
 sys.path.insert(0, '.')
@@ -61,7 +63,10 @@ if __name__ == '__main__':
         raise ValueError('Unknown training mode. See --help')
 
     opts.device = torch.device('cuda' if opts.cuda and torch.cuda.is_available() else 'cpu')
-    logger = Logger(prefix_path=os.path.dirname(os.path.realpath(__file__)) + '/logs',
+
+    dirname = time.strftime(f'%y%m%d_%H%M%S_{random.randint(0, 1e6):06} ', time.gmtime(time.time()))
+    abs_path = os.path.dirname(os.path.realpath(__file__))
+    logger = Logger(prefix_path=os.path.join(abs_path, dirname),
                     mode=opts.mode,
                     cleanup=True,
                     quiet=opts.q)
