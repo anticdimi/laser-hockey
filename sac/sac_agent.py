@@ -6,9 +6,7 @@ import numpy as np
 
 from base.agent import Agent
 from models import *
-from base import proxy_rewards
 from utils.utils import hard_update, soft_update
-import time
 
 
 class SACAgent(Agent):
@@ -91,21 +89,18 @@ class SACAgent(Agent):
         return self._act(obs, True) if self.eval_mode else self._act(obs)
 
     def _act(self, obs, evaluate=False):
-        state = torch.FloatTensor(obs).to(self.actor.device)
+        state = torch.FloatTensor(obs).to(self.actor.device).unsqueeze(0)
         if evaluate is False:
-            action, _, _ = self.actor.sample(state)
+            action, _, _, _ = self.actor.sample(state)
         else:
-            _, _, action = self.actor.sample(state)
-        return action.detach().cpu().numpy()
+            _, _, action, _ = self.actor.sample(state)
+        return action.detach().cpu().numpy()[0]
 
     def schedulers_step(self):
         self.critic.lr_scheduler.step()
         self.actor.lr_scheduler.step()
 
     def update_parameters(self, total_step):
-        if self.buffer.size < self._config['batch_size']:
-            return
-
         data = self.buffer.sample(self._config['batch_size'])
 
         state = torch.FloatTensor(
@@ -134,7 +129,7 @@ class SACAgent(Agent):
         ).squeeze(dim=1)
 
         with torch.no_grad():
-            next_state_action, next_state_log_pi, _ = self.actor.sample(next_state)
+            next_state_action, next_state_log_pi, _, _ = self.actor.sample(next_state)
             q1_next_targ, q2_next_targ = self.critic_target(next_state, next_state_action)
 
             min_qf_next_target = torch.min(q1_next_targ, q2_next_targ) - self.alpha * next_state_log_pi
@@ -150,12 +145,12 @@ class SACAgent(Agent):
         qf_loss.backward()
         self.critic.optimizer.step()
 
-        pi, log_pi, _ = self.actor.sample(state)
+        pi, log_pi, mus, sigmas = self.actor.sample(state)
 
         qf1_pi, qf2_pi = self.critic(state, pi)
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
 
-        policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean()
+        policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean(axis=0)
 
         self.actor.optimizer.zero_grad()
         policy_loss.backward()
@@ -175,4 +170,4 @@ class SACAgent(Agent):
         if total_step % self._config['update_target_every'] == 0:
             soft_update(self.critic_target, self.critic, self._config['soft_tau'])
 
-        return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item()
+        return (qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item())

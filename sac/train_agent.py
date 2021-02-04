@@ -26,17 +26,18 @@ parser.add_argument('--max_steps', help='Max steps for training', type=int, defa
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--evaluate_every',
                     help='# of episodes between evaluating agent during the training', type=int, default=1000)
-parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.000125)
+parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.001)
 parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
 parser.add_argument('--lr_milestones', help='Learning rate milestones', nargs='+')
 parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1000)
 parser.add_argument('--gamma', help='Discount', type=float, default=0.95)
 parser.add_argument('--batch_size', help='batch_size', type=int, default=64)
+parser.add_argument('--grad_steps', help='grad_steps', type=int, default=32)
 parser.add_argument(
     '--alpha',
     type=float,
     default=0.2,
-    help='Temperature parameter α determines the relative importance of the entropy term against the reward')
+    help='Temperature parameter alpha determines the relative importance of the entropy term against the reward')
 parser.add_argument('--automatic_entropy_tuning', type=bool, default=False,
                     help='Automatically adjust alpha')
 parser.add_argument('--soft_tau', help='tau', type=float, default=0.005)

@@ -73,13 +73,6 @@ class SACTrainer:
 
                 agent.store_transition((ob, a1, step_reward, next_state, done))
 
-                losses = agent.update_parameters(total_step_counter)
-                if losses is not None:
-                    q1_losses.append(losses[0])
-                    q2_losses.append(losses[1])
-                    actor_losses.append(losses[2])
-                    alpha_losses.append(losses[3])
-
                 if self._config['show']:
                     time.sleep(0.01)
                     env.render()
@@ -96,7 +89,19 @@ class SACTrainer:
                 obs_agent2 = env.obs_agent_two()
                 total_step_counter += 1
 
-            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
+            if agent.buffer.size < self._config['batch_size']:
+                continue
+
+            for _ in range(self._config['grad_steps']):
+                losses = agent.update_parameters(total_step_counter)
+
+                q1_losses.append(losses[0])
+                q2_losses.append(losses[1])
+                actor_losses.append(losses[2])
+                alpha_losses.append(losses[3])
+
+            agent.schedulers_step()
+            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, touched)
 
             if episode_counter % self._config['evaluate_every'] == 0:
                 agent.eval()
@@ -115,8 +120,6 @@ class SACTrainer:
 
             rew_stats.append(total_reward)
 
-            if losses is not None:
-                agent.schedulers_step()
             episode_counter += 1
 
         if self._config['show']:
