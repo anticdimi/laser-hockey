@@ -3,15 +3,14 @@ import numpy as np
 
 
 class Actor(torch.nn.Module):
-    def __init__(self, num_inputs, n_actions, device, learning_rate, hidden_sizes=[256, 256]):
+    def __init__(self, num_inputs, n_actions, device, learning_rate, lr_milestones, lr_factor=0.5,
+                 hidden_sizes=[256, 256,256]):
         super(Actor, self).__init__()
 
         self.num_inputs = num_inputs
-        self.n_actions = n_actions
-
-        self.linear1 = torch.nn.Linear(num_inputs[0], hidden_sizes[0])
-        self.linear2 = torch.nn.Linear(hidden_sizes[0], hidden_sizes[1])
-        self.linear3 = torch.nn.Linear(hidden_sizes[1], n_actions)
+        self.n_actions = n_actions/2
+        layer_sizes = [num_inputs[0]] + hidden_sizes + [4]
+        self.layers = torch.nn.ModuleList([torch.nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
 
         self.device = device
         if device.type == 'cuda':
@@ -20,15 +19,18 @@ class Actor(torch.nn.Module):
         self.optimizer = torch.optim.Adam(self.parameters(),
                                           lr=learning_rate,
                                           eps=0.000001)
+        self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            self.optimizer, milestones=lr_milestones, gamma=lr_factor
+        )
 
     def forward(self, x):
         if not isinstance(x, np.ndarray):
             x = x.cpu()
         x = x.reshape(-1, self.num_inputs[0])
         x = torch.FloatTensor(x).to(self.device)
-        x = torch.relu(self.linear1(x))
-        x = torch.relu(self.linear2(x))
-        x = torch.tanh(self.linear3(x))  # torch.softmax(self.linear3(x),dim=-1)
+        for layer in self.layers[:-1]:
+            x = torch.relu(layer(x))
+        x = torch.tanh(self.layers[-1](x))
         return x
 
     def predict(self, x):
@@ -37,15 +39,15 @@ class Actor(torch.nn.Module):
 
 
 class Critic(torch.nn.Module):
-    def __init__(self, num_inputs, n_actions, device, learning_rate, hidden_sizes=[256, 256]):
+    def __init__(self, num_inputs, n_actions, device, learning_rate, lr_milestones, lr_factor=0.5,
+                 hidden_sizes=[256, 256,256]):
         super(Critic, self).__init__()
 
         self.num_inputs = num_inputs
         self.n_actions = n_actions
 
-        self.linear1 = torch.nn.Linear(num_inputs[0] + n_actions, hidden_sizes[0])
-        self.linear2 = torch.nn.Linear(hidden_sizes[0], hidden_sizes[1])
-        self.linear3 = torch.nn.Linear(hidden_sizes[1], 1)
+        layer_sizes = [num_inputs[0] + 4] + hidden_sizes + [1]
+        self.layers = torch.nn.ModuleList([torch.nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
 
         self.device = device
         if device.type == 'cuda':
@@ -54,7 +56,9 @@ class Critic(torch.nn.Module):
         self.optimizer = torch.optim.Adam(self.parameters(),
                                           lr=learning_rate,
                                           eps=0.000001)
-
+        self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            self.optimizer, milestones=lr_milestones, gamma=lr_factor
+        )
         self.loss = torch.nn.MSELoss()
 
     def forward(self, state, action):
@@ -66,11 +70,9 @@ class Critic(torch.nn.Module):
         state = torch.FloatTensor(state).to(self.device)
         action = torch.FloatTensor(action).to(self.device)
         x = torch.cat([state, action], 1)
-
-        x = torch.relu(self.linear1(x))
-        x = torch.relu(self.linear2(x))
-        x = self.linear3(x)
-
+        for layer in self.layers[:-1]:
+            x = torch.relu(layer(x))
+        x = self.layers[-1](x)
         return x
 
     def predict(self, x):
