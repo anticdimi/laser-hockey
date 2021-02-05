@@ -34,9 +34,11 @@ if __name__ == '__main__':
 
     logger = Logger(os.path.dirname(os.path.realpath(__file__)) + '/logs', mode=opts.mode, quiet=opts.q)
     agent = logger.load_model(opts.filename)
-    # TODO: refactor
-    agent._config['show'] = opts.show
     env = h_env.HockeyEnv(mode=mode)
+
+    # TODO: refactor
     agent.eval()
+    agent._config['show'] = opts.show
+    agent._config['max_steps'] = 250
     opponent = h_env.BasicOpponent(weak=False)
     evaluate(agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
