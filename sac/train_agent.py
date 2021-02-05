@@ -24,7 +24,7 @@ parser.add_argument('--mode', help='Mode for training currently: (shooting | def
 
 # Training params
 parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=5000)
-parser.add_argument('--max_steps', help='Max steps for training', type=int, default=160)
+parser.add_argument('--max_steps', help='Max steps for training', type=int, default=250)
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--evaluate_every',
                     help='# of episodes between evaluating agent during the training', type=int, default=1000)
@@ -76,13 +76,14 @@ if __name__ == '__main__':
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
     opponents = [
         h_env.BasicOpponent(weak=False),
-        h_env.BasicOpponent(weak=True),
+        h_env.BasicOpponent(weak=False),
     ]
 
     opponent_paths = [
-        '/Users/dimi/Coding/laser-hockey/sac/logs/10k-alpha/agents/agent.pkl',
-        '/Users/dimi/Coding/laser-hockey/sac/logs/10k-no-alfa/agents/agent.pkl',
-        '/Users/dimi/Coding/laser-hockey/sac/logs/15k-self-best-two/agents/a-8000.pkl'
+        # '/Users/dimi/Coding/laser-hockey/sac/logs/10k-alpha/agents/agent.pkl',
+        # '/Users/dimi/Coding/laser-hockey/sac/logs/10k-no-alfa/agents/agent.pkl',
+        # '/Users/dimi/Coding/laser-hockey/sac/logs/15k-self-best-two/agents/a-8000.pkl'
+        # '/Users/dimi/Coding/laser-hockey/sac/logs/15k-self/agents/agent.pkl'
     ]
 
     for p in opponent_paths:

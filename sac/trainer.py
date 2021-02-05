@@ -107,7 +107,7 @@ class SACTrainer:
 
                 # Add good agent to opponents queue
                 if (
-                    episode_counter >= 5000
+                    episode_counter >= 4000
                     and grad_updates % 100000 == 0
                 ):
                     new_opponent = SACAgent.clone_from(agent)

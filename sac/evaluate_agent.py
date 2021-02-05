@@ -14,6 +14,7 @@ parser = ArgumentParser()
 
 # Training params
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
+parser.add_argument('--max_steps', help='Set number of steps in an eval episode', type=int, default=250)
 parser.add_argument('--filename', help='Path to the pretrained model', default=None)
 parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | defense)', default='shooting')
 parser.add_argument('--show', help='Set if want to render training process', action='store_true')
@@ -39,6 +40,6 @@ if __name__ == '__main__':
     # TODO: refactor
     agent.eval()
     agent._config['show'] = opts.show
-    agent._config['max_steps'] = 250
+    agent._config['max_steps'] = opts.max_steps
     opponent = h_env.BasicOpponent(weak=False)
     evaluate(agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
