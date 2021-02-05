@@ -101,7 +101,7 @@ class SACTrainer:
                 alpha_losses.append(losses[3])
 
             agent.schedulers_step()
-            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, touched)
+            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
 
             if episode_counter % self._config['evaluate_every'] == 0:
                 agent.eval()
