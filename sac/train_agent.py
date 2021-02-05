@@ -6,6 +6,8 @@ from importlib import reload
 from argparse import ArgumentParser
 import sys
 from trainer import SACTrainer
+import time
+import random
 
 # TODO: fix if possible, not the best way of importing
 sys.path.insert(0, '.')
@@ -26,17 +28,19 @@ parser.add_argument('--max_steps', help='Max steps for training', type=int, defa
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--evaluate_every',
                     help='# of episodes between evaluating agent during the training', type=int, default=1000)
-parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.000125)
+parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.001)
 parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
 parser.add_argument('--lr_milestones', help='Learning rate milestones', nargs='+')
+parser.add_argument('--alpha_milestones', help='Learning rate milestones', nargs='+')
 parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1000)
 parser.add_argument('--gamma', help='Discount', type=float, default=0.95)
 parser.add_argument('--batch_size', help='batch_size', type=int, default=64)
+parser.add_argument('--grad_steps', help='grad_steps', type=int, default=32)
 parser.add_argument(
     '--alpha',
     type=float,
     default=0.2,
-    help='Temperature parameter α determines the relative importance of the entropy term against the reward')
+    help='Temperature parameter alpha determines the relative importance of the entropy term against the reward')
 parser.add_argument('--automatic_entropy_tuning', type=bool, default=False,
                     help='Automatically adjust alpha')
 parser.add_argument('--soft_tau', help='tau', type=float, default=0.005)
@@ -60,7 +64,10 @@ if __name__ == '__main__':
         raise ValueError('Unknown training mode. See --help')
 
     opts.device = torch.device('cuda' if opts.cuda and torch.cuda.is_available() else 'cpu')
-    logger = Logger(prefix_path=os.path.dirname(os.path.realpath(__file__)) + '/logs',
+
+    dirname = time.strftime(f'%y%m%d_%H%M%S_{random.randint(0, 1e6):06}', time.gmtime(time.time()))
+    abs_path = os.path.dirname(os.path.realpath(__file__))
+    logger = Logger(prefix_path=os.path.join(abs_path, dirname),
                     mode=opts.mode,
                     cleanup=True,
                     quiet=opts.q)
