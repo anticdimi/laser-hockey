@@ -3,6 +3,7 @@ import time
 import copy
 
 from base.evaluator import evaluate
+from sac_agent import SACAgent
 from utils import utils
 from laserhockey import hockey_env as h_env
 
@@ -106,12 +107,12 @@ class SACTrainer:
 
                 # Add good agent to opponents queue
                 if (
-                    episode_counter > 5 * self._config['evaluate_every']
+                    episode_counter >= 5000
                     and grad_updates % 100000 == 0
                 ):
-                    agent_copy = copy.deepcopy(agent)
-                    agent_copy.eval()
-                    opponents.append(agent_copy)
+                    new_opponent = SACAgent.clone_from(agent)
+                    new_opponent.eval()
+                    opponents.append(new_opponent)
 
             agent.schedulers_step()
             self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)

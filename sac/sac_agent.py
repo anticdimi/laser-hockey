@@ -1,5 +1,6 @@
 import sys
 
+import copy
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 import numpy as np
@@ -34,6 +35,7 @@ class SACAgent(Agent):
             action_dim=4,
             userconfig=userconfig
         )
+        self.action_space = action_space
         self.device = userconfig['device']
         self.alpha = userconfig['alpha']
         self.automatic_entropy_tuning = self._config['automatic_entropy_tuning']
@@ -48,7 +50,7 @@ class SACAgent(Agent):
         self.actor = ActorNetwork(
             input_dims=obs_dim,
             learning_rate=self._config['learning_rate'],
-            action_space=action_space,
+            action_space=self.action_space,
             hidden_sizes=[128, 128],
             lr_milestones=lr_milestones,
             lr_factor=self._config['lr_factor'],
@@ -84,6 +86,20 @@ class SACAgent(Agent):
             self.alpha_scheduler = torch.optim.lr_scheduler.MultiStepLR(
                 self.alpha_optim, milestones=milestones, gamma=0.5
             )
+
+    @classmethod
+    def clone_from(cls, agent):
+        clone = cls(
+            copy.deepcopy(agent.logger),
+            copy.deepcopy(agent.obs_dim),
+            copy.deepcopy(agent.action_space),
+            copy.deepcopy(agent._config)
+        )
+        clone.critic.load_state_dict(agent.critic.state_dict())
+        clone.critic_target.load_state_dict(agent.critic_target.state_dict())
+        clone.actor.load_state_dict(agent.actor.state_dict())
+
+        return clone
 
     @staticmethod
     def load_model(fpath):
