@@ -2,7 +2,6 @@ import numpy as np
 import time
 import copy
 
-from numpy.lib.function_base import copy
 from base.evaluator import evaluate
 from utils import utils
 from laserhockey import hockey_env as h_env
