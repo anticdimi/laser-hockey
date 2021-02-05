@@ -3,6 +3,8 @@ import sys
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 import numpy as np
+from pathlib import Path
+import pickle
 
 from base.agent import Agent
 from models import *
@@ -82,6 +84,11 @@ class SACAgent(Agent):
             self.alpha_scheduler = torch.optim.lr_scheduler.MultiStepLR(
                 self.alpha_optim, milestones=milestones, gamma=0.5
             )
+
+    @staticmethod
+    def load_model(fpath):
+        with open(Path(fpath), 'rb') as inp:
+            return pickle.load(inp)
 
     def eval(self):
         self.eval_mode = True
