@@ -29,6 +29,7 @@ parser.add_argument('--eval_episodes', help='Set number of evaluation episodes',
 parser.add_argument('--evaluate_every',
                     help='# of episodes between evaluating agent during the training', type=int, default=1000)
 parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.001)
+parser.add_argument('--alpha_lr', help='Learning rate', type=float, default=3e-4)
 parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
 parser.add_argument('--lr_milestones', help='Learning rate milestones', nargs='+')
 parser.add_argument('--alpha_milestones', help='Learning rate milestones', nargs='+')
@@ -75,12 +76,13 @@ if __name__ == '__main__':
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
     opponents = [
         h_env.BasicOpponent(weak=False),
+        h_env.BasicOpponent(weak=True),
     ]
 
     opponent_paths = [
-        # '/Users/dimi/Coding/laser-hockey/sac/logs/10k-alpha/agents/agent.pkl',
-        # '/Users/dimi/Coding/laser-hockey/sac/logs/10k-no-alfa/agents/agent.pkl',
-        # '/Users/dimi/Coding/laser-hockey/sac/logs/10k-alpha/agents/a-8000.pkl'
+        '/Users/dimi/Coding/laser-hockey/sac/logs/10k-alpha/agents/agent.pkl',
+        '/Users/dimi/Coding/laser-hockey/sac/logs/10k-no-alfa/agents/agent.pkl',
+        '/Users/dimi/Coding/laser-hockey/sac/logs/15k-self-best-two/agents/a-8000.pkl'
     ]
 
     for p in opponent_paths:

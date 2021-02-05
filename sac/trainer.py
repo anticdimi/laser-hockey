@@ -1,5 +1,8 @@
 import numpy as np
 import time
+import copy
+
+from numpy.lib.function_base import copy
 from base.evaluator import evaluate
 from utils import utils
 from laserhockey import hockey_env as h_env
@@ -34,6 +37,7 @@ class SACTrainer:
 
         episode_counter = 1
         total_step_counter = 0
+        grad_updates = 0
         while episode_counter <= self._config['max_episodes']:
             ob = env.reset()
             obs_agent2 = env.obs_agent_two()
@@ -94,11 +98,21 @@ class SACTrainer:
 
             for _ in range(self._config['grad_steps']):
                 losses = agent.update_parameters(total_step_counter)
+                grad_updates += 1
 
                 q1_losses.append(losses[0])
                 q2_losses.append(losses[1])
                 actor_losses.append(losses[2])
                 alpha_losses.append(losses[3])
+
+                # Add good agent to opponents queue
+                if (
+                    episode_counter > 5 * self._config['evaluate_every']
+                    and grad_updates % 100000 == 0
+                ):
+                    agent_copy = copy.deepcopy(agent)
+                    agent_copy.eval()
+                    opponents.append(agent_copy)
 
             agent.schedulers_step()
             self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
