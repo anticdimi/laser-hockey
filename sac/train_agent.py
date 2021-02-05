@@ -31,6 +31,7 @@ parser.add_argument('--evaluate_every',
 parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.001)
 parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
 parser.add_argument('--lr_milestones', help='Learning rate milestones', nargs='+')
+parser.add_argument('--alpha_milestones', help='Learning rate milestones', nargs='+')
 parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1000)
 parser.add_argument('--gamma', help='Discount', type=float, default=0.95)
 parser.add_argument('--batch_size', help='batch_size', type=int, default=64)
@@ -64,7 +65,7 @@ if __name__ == '__main__':
 
     opts.device = torch.device('cuda' if opts.cuda and torch.cuda.is_available() else 'cpu')
 
-    dirname = time.strftime(f'%y%m%d_%H%M%S_{random.randint(0, 1e6):06} ', time.gmtime(time.time()))
+    dirname = time.strftime(f'%y%m%d_%H%M%S_{random.randint(0, 1e6):06}', time.gmtime(time.time()))
     abs_path = os.path.dirname(os.path.realpath(__file__))
     logger = Logger(prefix_path=os.path.join(abs_path, dirname),
                     mode=opts.mode,

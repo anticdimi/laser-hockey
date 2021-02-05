@@ -75,9 +75,13 @@ class SACAgent(Agent):
         hard_update(self.critic_target, self.critic)
 
         if self.automatic_entropy_tuning:
+            milestones = [int(x) for x in (self._config['alpha_milestones'][0]).split(' ')]
             self.target_entropy = -torch.prod(torch.FloatTensor(4).to(self.device)).item()
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self._config['learning_rate'])
+            self.alpha_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+                self.alpha_optim, milestones=milestones, gamma=0.5
+            )
 
     def eval(self):
         self.eval_mode = True
@@ -162,6 +166,7 @@ class SACAgent(Agent):
             self.alpha_optim.zero_grad()
             alpha_loss.backward()
             self.alpha_optim.step()
+            self.alpha_scheduler.step()
 
             self.alpha = self.log_alpha.exp()
         else:
