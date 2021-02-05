@@ -52,7 +52,7 @@ class QFunction(QFeedforward):
 
     Parameters
     ----------
-    observation_dim : int
+    obs_dim : int
         The variable specifies the size of the observation vector.
     action_dim: int
         The variable specifies the size of the action vector.
@@ -70,10 +70,9 @@ class QFunction(QFeedforward):
         The variable specifies
     """
 
-    def __init__(self, observation_dim, action_dim, device, hidden_sizes,
-                 dueling, learning_rate, lr_factor, lr_milestones):
+    def __init__(self, obs_dim, action_dim, device, hidden_sizes, dueling, learning_rate, lr_factor, lr_milestones):
         super().__init__(
-            input_size=observation_dim,
+            input_size=obs_dim,
             hidden_sizes=hidden_sizes,
             output_size=action_dim,
             device=device,

@@ -29,8 +29,8 @@ class Agent(object):
 
         self._config = {
             'discount': 0.95,
-            'buffer_size': int(1e5),
-            'batch_size': 128,
+            'buffer_size': int(1.6e5),
+            'batch_size': 32,
             'hidden_sizes': [128, 128],
         }
         self._config.update(userconfig)
@@ -41,7 +41,7 @@ class Agent(object):
         if self._config['per']:
             self.buffer = PrioritizedExperienceReplay(max_size=self._config['buffer_size'],
                                                       alpha=self._config['per_alpha'],
-                                                      beta=1 - self._config['epsilon'])
+                                                      beta=self._config['per_beta'])
         else:
             self.buffer = UniformExperienceReplay(max_size=self._config['buffer_size'])
 

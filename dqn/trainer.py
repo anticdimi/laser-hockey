@@ -2,6 +2,9 @@ from collections import defaultdict
 import numpy as np
 import time
 from base.evaluator import evaluate
+from laserhockey import hockey_env as h_env
+from utils.utils import poll_opponent
+from copy import deepcopy
 
 
 class DQNTrainer:
@@ -20,19 +23,22 @@ class DQNTrainer:
         self.logger = logger
         self._config = config
 
-    def train(self, agent, env, run_evaluation, action_mapping):
+    def train(self, agent, env):
         epsilon = self._config['epsilon']
         epsilon_decay = self._config['epsilon_decay']
         min_epsilon = self._config['min_epsilon']
         episode_counter = 1
         total_step_counter = 0
 
+        beta = self._config['per_beta']
+        beta_inc = self._config['per_beta_inc']
+        beta_max = self._config['per_beta_max']
+
         rew_stats = []
         loss_stats = []
         lost_stats = {}
         touch_stats = {}
         won_stats = {}
-        # rewards = defaultdict(lambda: [])
 
         eval_stats = {
             'reward': [],
@@ -40,6 +46,10 @@ class DQNTrainer:
             'won': [],
             'lost': []
         }
+
+        opponents = [h_env.BasicOpponent(weak=False)]
+
+        opponent = poll_opponent(opponents=opponents)
 
         while episode_counter <= self._config['max_episodes']:
             ob = env.reset()
@@ -52,7 +62,8 @@ class DQNTrainer:
 
             epsilon = max(epsilon_decay * epsilon, min_epsilon)
             if self._config['per']:
-                agent.update_per_beta(beta=1 - epsilon)
+                beta = min(beta_max, beta + beta_inc)
+                agent.update_per_beta(beta=beta)
 
             total_reward = 0
             touched = 0
@@ -67,16 +78,19 @@ class DQNTrainer:
                     agent.update_target_net()
 
                 a1 = agent.act(ob, eps=epsilon)
-                a1_discrete = action_mapping(a1)
+                a1_list = agent.action_mapping[a1]
 
                 if self._config['mode'] in ['defense', 'normal']:
-                    a2 = agent.opponent.act(obs_agent2)
+                    a2 = opponent.act(obs_agent2)
+                    # a copy of our agent has been chosen, transform the action id to a list
+                    if not isinstance(a2, np.ndarray):
+                        a2 = agent.action_mapping[a2]
                 elif self._config['mode'] == 'shooting':
                     a2 = [0, 0, 0, 0]
                 else:
                     raise NotImplementedError(f'Training for {self._config["mode"]} not implemented.')
 
-                (ob_new, reward, done, _info) = env.step(np.hstack([a1_discrete, a2]))
+                (ob_new, reward, done, _info) = env.step(np.hstack([a1_list, a2]))
 
                 touched = max(touched, _info['reward_touch_puck'])
 
@@ -111,8 +125,9 @@ class DQNTrainer:
                 agent.eval()
                 old_show = agent._config['show']
                 agent._config['show'] = False
-                rew, touch, won, lost = evaluate(agent=agent, env=env, eval_episodes=self._config['eval_episodes'],
-                                                 quiet=True, action_mapping=action_mapping)
+                rew, touch, won, lost = evaluate(agent=agent, env=env, opponent=h_env.BasicOpponent(weak=False),
+                                                 eval_episodes=self._config['eval_episodes'], quiet=True,
+                                                 action_mapping=agent.action_mapping)
                 agent.train()
                 agent._config['show'] = old_show
 
@@ -124,6 +139,13 @@ class DQNTrainer:
 
             loss_stats.extend(agent.train_model())
             rew_stats.append(total_reward)
+
+            # if self._config['self_play'] and episode_counter >= self._config['max_episodes'] // 2 and \
+            #         episode_counter % self._config['poll_opponent_every'] == 0:
+            if self._config['self_play'] and episode_counter >= self._config['start_polling_from'] and \
+                    episode_counter % self._config['poll_opponent_every'] == 0:
+                opponents.append(deepcopy(agent))
+                opponent = poll_opponent(opponents=opponents)
 
             episode_counter += 1
 
@@ -146,13 +168,3 @@ class DQNTrainer:
 
         # Save model
         self.logger.save_model(agent, 'agent.pkl')
-
-        # # Log rew histograms
-        # for reward_type, reward_values in rewards.items():
-        #     self.logger.hist(reward_values, reward_type, f'{reward_type}.pdf', False)
-
-        # if run_evaluation:
-        #     agent._config['show'] = False
-        #     agent.eval()
-        #     evaluate(agent=agent, env=env, eval_episodes=self._config['eval_episodes'], quiet=False,
-        #              action_mapping=action_mapping, evaluate_on_opposite_side=False)

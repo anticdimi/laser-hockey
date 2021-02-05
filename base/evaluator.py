@@ -29,12 +29,14 @@ def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=No
                 if action_mapping is not None:
                     # DQN act
                     a2 = agent.act(obs_agent2, eps=0)
-                    a2 = action_mapping(a2)
+                    a2 = action_mapping[a2]
                 else:
                     a2 = agent.act(obs_agent2)
 
                 if agent._config['mode'] in ['defense', 'normal']:
-                    a1 = agent.opponent.act(ob)
+                    a1 = opponent.act(ob)
+                    if not isinstance(a1, np.ndarray):
+                        a1 = action_mapping[a1]
                 elif agent._config['mode'] == 'shooting':
                     a1 = [0, 0, 0, 0]
                 else:
@@ -44,13 +46,15 @@ def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=No
                 if action_mapping is not None:
                     # DQN act
                     a1 = agent.act(ob, eps=0)
-                    a1 = action_mapping(a1)
+                    a1 = action_mapping[a1]
                 else:
                     # SAC act
                     a1 = agent.act(ob)
 
                 if agent._config['mode'] in ['defense', 'normal']:
-                    a2 = agent.opponent.act(obs_agent2)
+                    a2 = opponent.act(obs_agent2)
+                    if not isinstance(a2, np.ndarray):
+                        a2 = action_mapping[a2]
                 elif agent._config['mode'] == 'shooting':
                     a2 = [0, 0, 0, 0]
                 else:

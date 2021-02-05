@@ -6,7 +6,7 @@ from agent import DQNAgent
 from importlib import reload
 from argparse import ArgumentParser
 import sys
-from custom_action_space import custom_discrete_to_continuous_action, CUSTOM_DISCRETE_ACTIONS
+from custom_action_space import CUSTOM_DISCRETE_ACTIONS, DEFAULT_DISCRETE_ACTIONS
 from trainer import DQNTrainer
 
 # TODO: fix if possible, not the best way of importing
@@ -19,28 +19,34 @@ parser.add_argument('--dry-run', help='Set if running only for sanity check', ac
 parser.add_argument('--cuda', help='Set if want to train on graphic card', action='store_true')
 parser.add_argument('--show', help='Set if want to render training process', action='store_true')
 parser.add_argument('--q', help='Quiet mode (no prints)', action='store_true')
-parser.add_argument('--evaluate', help='Set if want to evaluate agent after the training', action='store_true')
 parser.add_argument('--mode', help='Mode for training currently: (shooting | defense | normal)', default='normal')
 
 # Training params
 parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=10_000)
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=250)
 parser.add_argument('--iter_fit', help='Iter fit', type=int, default=32)
-parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=500)
+parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1_000)
 parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.000125)
 parser.add_argument('--change_lr_every', help='Change learning rate every # of episodes', type=int, default=1_000)
 parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
 parser.add_argument('--lr_milestones', help='Learning rate milestones', nargs='+')
-parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=100)
+parser.add_argument('--evaluate', help='Set if want to evaluate agent after the training', action='store_true')
+parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=250)
 parser.add_argument('--evaluate_every', help='Evaluate every # of episodes', type=int, default=2_000)
 parser.add_argument('--discount', help='Discount', type=float, default=0.95)
 parser.add_argument('--epsilon', help='Epsilon', type=float, default=0.95)
-parser.add_argument('--epsilon_decay', help='Epsilon decay', type=float, default=0.996)
+parser.add_argument('--epsilon_decay', help='Epsilon decay', type=float, default=0.995)
 parser.add_argument('--min_epsilon', help='min_epsilon', type=float, default=0.05)
 parser.add_argument('--dueling', help='Specifies whether the architecture should be dueling', action='store_true')
 parser.add_argument('--double', help='Calculate target with Double DQN', action='store_true')
 parser.add_argument('--per', help='Utilize Prioritized Experience Replay', action='store_true')
 parser.add_argument('--per_alpha', help='Alpha for PER', type=float, default=0.6)
+parser.add_argument('--per_beta', help='Beta for PER', type=float, default=0.4)
+parser.add_argument('--per_beta_inc', help='Beta for PER', type=float, default=0.000075)
+parser.add_argument('--per_beta_max', help='Beta for PER', type=float, default=1)
+parser.add_argument('--self_play', help='Utilize self play', action='store_true')
+parser.add_argument('--poll_opponent_every', help='Number of episodes between opponent polls', type=int, default=3_000)
+parser.add_argument('--start_polling_from', help='Episode from which on we start polling', type=int, default=3_000)
 
 opts = parser.parse_args()
 
@@ -62,16 +68,16 @@ if __name__ == '__main__':
                     mode=opts.mode,
                     cleanup=True,
                     quiet=opts.q)
-    opponent = h_env.BasicOpponent(weak=False)
+
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
 
+    action_mapping = DEFAULT_DISCRETE_ACTIONS
+
     q_agent = DQNAgent(
-        opponent=opponent,
         logger=logger,
         obs_dim=env.observation_space.shape[0],
-        action_dim=len(CUSTOM_DISCRETE_ACTIONS),
-        CUSTOM_DISCRETE_ACTIONS=CUSTOM_DISCRETE_ACTIONS,
+        action_mapping=action_mapping,
         userconfig=vars(opts)
     )
-    trainer = DQNTrainer(logger, vars(opts))
-    trainer.train(q_agent, env, opts.evaluate, custom_discrete_to_continuous_action)
+    trainer = DQNTrainer(logger=logger, config=vars(opts))
+    trainer.train(agent=q_agent, env=env)

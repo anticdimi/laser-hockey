@@ -2,7 +2,7 @@ from argparse import ArgumentParser
 from laserhockey import hockey_env as h_env
 import os
 import sys
-from custom_action_space import custom_discrete_to_continuous_action
+from custom_action_space import CUSTOM_DISCRETE_ACTIONS, DEFAULT_DISCRETE_ACTIONS
 
 import sys
 
@@ -33,12 +33,15 @@ if __name__ == '__main__':
     else:
         raise ValueError('Unknown training mode. See --help')
 
-    logger = Logger(os.path.dirname(os.path.realpath(__file__)) + '/logs', mode=opts.mode, quiet=opts.q)
-    q_agent = logger.load_model(opts.filename)
+    logger = Logger(prefix_path=os.path.dirname(os.path.realpath(__file__)) + '/logs',
+                    mode=opts.mode,
+                    quiet=opts.q)
+    q_agent = logger.load_model(filename=opts.filename)
     # TODO: refactor
     q_agent._config['show'] = opts.show
     q_agent._config['max_steps'] = 250
     q_agent.eval()
     env = h_env.HockeyEnv(mode=mode)
     opponent = h_env.BasicOpponent(weak=False)
-    evaluate(q_agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
+    evaluate(agent=q_agent, env=env, opponent=opponent, eval_episodes=opts.eval_episodes,
+             action_mapping=q_agent.action_mapping, evaluate_on_opposite_side=opts.opposite)
