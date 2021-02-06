@@ -1,8 +1,6 @@
 from argparse import ArgumentParser
 from laserhockey import hockey_env as h_env
 import os
-import sys
-from custom_action_space import CUSTOM_DISCRETE_ACTIONS, DEFAULT_DISCRETE_ACTIONS
 
 import sys
 
