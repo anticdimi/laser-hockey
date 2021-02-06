@@ -23,7 +23,7 @@ def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=No
         touch_stats[episode_counter] = 0
         won_stats[episode_counter] = 0
         lost_stats[episode_counter] = 0
-        for step in range(agent._config['max_steps']):
+        for step in range(env.max_timesteps):
 
             if evaluate_on_opposite_side:
                 if action_mapping is not None:

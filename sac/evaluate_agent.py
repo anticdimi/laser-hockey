@@ -40,6 +40,5 @@ if __name__ == '__main__':
     # TODO: refactor
     agent.eval()
     agent._config['show'] = opts.show
-    agent._config['max_steps'] = opts.max_steps
     opponent = h_env.BasicOpponent(weak=False)
     evaluate(agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
