@@ -24,25 +24,25 @@ DEFAULT_DISCRETE_ACTIONS = [
 ]
 
 REDUCED_CUSTOM_DISCRETE_ACTIONS = [
-    [0, 0, 0, 0],       # stand
-    [-1, 0, 0, 0],      # left
-    [1, 0, 0, 0],       # right
-    [0, -1, 0, 0],      # down
-    [0, 1, 0, 0],       # up
-    [0, 0, -1, 0],      # clockwise
-    [0, 0, 1, 0],       # counter-clockwise
-    [-1, -1, 0, 0],     # left down
-    [-1, 1, 0, 0],      # left up
-    [1, -1, 0, 0],      # right down
-    [1, 1, 0, 0],       # right up
-    [-1, -1, -1, 0],    # left down clockwise
-    [-1, -1, 1, 0],     # left down counter-clockwise
-    [-1, 1, -1, 0],     # left up clockwise
-    [-1, 1, 1, 0],      # left up counter-clockwise
-    [1, -1, -1, 0],     # right down clockwise
-    [1, -1, 1, 0],      # right down counter-clockwise
-    [1, 1, -1, 0],      # right up clockwise
-    [1, 1, 1, 0],       # right up counter-clockwise
-    [0, 0, 0, 1],       # shoot
+    [0, 0, 0, 0],       # 0 stand
+    [-1, 0, 0, 0],      # 1 left
+    [1, 0, 0, 0],       # 2 right
+    [0, -1, 0, 0],      # 3 down
+    [0, 1, 0, 0],       # 4 up
+    [0, 0, -1, 0],      # 5 clockwise
+    [0, 0, 1, 0],       # 6 counter-clockwise
+    [-1, -1, 0, 0],     # 7 left down
+    [-1, 1, 0, 0],      # 8 left up
+    [1, -1, 0, 0],      # 9 right down
+    [1, 1, 0, 0],       # 10 right up
+    [-1, -1, -1, 0],    # 11 left down clockwise
+    [-1, -1, 1, 0],     # 12 left down counter-clockwise
+    [-1, 1, -1, 0],     # 13 left up clockwise
+    [-1, 1, 1, 0],      # 14 left up counter-clockwise
+    [1, -1, -1, 0],     # 15 right down clockwise
+    [1, -1, 1, 0],      # 16 right down counter-clockwise
+    [1, 1, -1, 0],      # 17 right up clockwise
+    [1, 1, 1, 0],       # 18 right up counter-clockwise
+    [0, 0, 0, 1],       # 19 shoot
 ]
 

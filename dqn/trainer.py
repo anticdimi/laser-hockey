@@ -30,6 +30,7 @@ class DQNTrainer:
         min_epsilon = self._config['min_epsilon']
         episode_counter = 1
         total_step_counter = 0
+        total_grad_updates = 0
 
         beta = self._config['per_beta']
         beta_inc = self._config['per_beta_inc']
@@ -61,7 +62,7 @@ class DQNTrainer:
                 # TODO: Remove upper line when teaching to reach towards the ball
                 continue
 
-            epsilon = max(epsilon_decay * epsilon, min_epsilon)
+            epsilon = max(epsilon - epsilon_decay, min_epsilon)
             if self._config['per']:
                 beta = min(beta_max, beta + beta_inc)
                 agent.update_per_beta(beta=beta)
@@ -74,10 +75,6 @@ class DQNTrainer:
             lost_stats[episode_counter] = 0
 
             for step in range(1, self._config['max_steps'] + 1):
-
-                if total_step_counter % self._config['update_target_every'] == 0:
-                    agent.update_target_net()
-
                 a1 = agent.act(ob, eps=epsilon)
                 a1_list = agent.action_mapping[a1]
 
@@ -98,6 +95,9 @@ class DQNTrainer:
                 step_reward = reward + 5 * _info['reward_closeness_to_puck'] - (1 - touched) * 0.1 + \
                               touched * first_time_touch * 0.1 * step
 
+                # step_reward = reward/30 + _info['reward_closeness_to_puck'] / 30 - (1 - touched) * 0.001 + \
+                #               touched * first_time_touch * 0.001 * step
+
                 first_time_touch = 1 - touched
 
                 total_reward += step_reward
@@ -115,6 +115,16 @@ class DQNTrainer:
                     won_stats[episode_counter] = 1 if env.winner == 1 else 0
                     lost_stats[episode_counter] = 1 if env.winner == -1 else 0
                     break
+
+                if total_step_counter % self._config['train_every'] == 0 and \
+                        total_step_counter > self._config['start_learning_from']:
+
+                    loss_stats.append(agent.train_model())
+                    rew_stats.append(total_reward)
+                    total_grad_updates += 1
+
+                    if total_grad_updates % self._config['update_target_every'] == 0:
+                        agent.update_target_net()
 
                 ob = ob_new
                 obs_agent2 = env.obs_agent_two()
@@ -139,8 +149,10 @@ class DQNTrainer:
                 eval_stats['lost'].append(lost)
                 self.logger.save_model(agent, f'a-{episode_counter}.pkl')
 
-            loss_stats.extend(agent.train_model())
-            rew_stats.append(total_reward)
+
+            # TODO: COME BACK TO THIS
+            if total_step_counter > self._config['start_learning_from']:
+                agent.step_lr_scheduler()
 
             # if self._config['self_play'] and episode_counter >= self._config['max_episodes'] // 2 and \
             #         episode_counter % self._config['poll_opponent_every'] == 0:

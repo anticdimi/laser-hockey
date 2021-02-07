@@ -7,7 +7,7 @@ import numpy as np
 from base.network import Feedforward
 
 
-class QFeedforward(Feedforward):
+class QFeedforward(torch.nn.Module):
     """
     The QFeedforward class implements Dueling architecture of DQN.
 
@@ -24,26 +24,47 @@ class QFeedforward(Feedforward):
     """
 
     def __init__(self, input_size, hidden_sizes, output_size, device, dueling):
-        super().__init__(input_size, hidden_sizes, output_size, device)
+        super(QFeedforward, self).__init__()
         self.dueling = dueling
+        self.device = device
+        if device.type == 'cuda':
+            self.cuda()
+
+        num_hidden_units = 128
+
+        self.fc = torch.nn.Linear(input_size, num_hidden_units)
 
         if dueling:
-            self.A = torch.nn.Linear(self.hidden_sizes[-1], self.output_size)
-            self.V = torch.nn.Linear(self.hidden_sizes[-1], 1)
+            self.pre_A = torch.nn.Linear(num_hidden_units, num_hidden_units)
+            self.pre_V = torch.nn.Linear(num_hidden_units, num_hidden_units)
+
+            self.A = torch.nn.Linear(num_hidden_units, output_size)
+            self.V = torch.nn.Linear(num_hidden_units, 1)
         else:
-            self.Q = torch.nn.Linear(self.hidden_sizes[-1], self.output_size)
+            self.Q = torch.nn.Linear(num_hidden_units, self.output_size)
 
     def forward(self, x):
-        x = super().forward(x)
+        if self.device.type == 'cuda' and x.device.type != 'cuda':
+            x = x.to(self.device)
+
+        x = torch.nn.functional.relu(self.fc(x))
 
         if self.dueling:
-            A = self.A(x)
-            V = self.V(x)
+            pre_A = torch.nn.functional.relu(self.pre_A(x))
+            pre_V = torch.nn.functional.relu(self.pre_V(x))
+
+            A = self.A(pre_A)
+            V = self.V(pre_V)
+
             Q = torch.add(V, (A - A.mean(dim=-1, keepdim=True)))
         else:
             Q = self.Q(x)
 
         return Q
+
+    def predict(self, x):
+        with torch.no_grad():
+            return self.forward(torch.from_numpy(x.astype(np.float32)).to(self.device)).cpu().numpy()
 
 
 class QFunction(QFeedforward):
@@ -99,6 +120,7 @@ class QFunction(QFeedforward):
         mean_weighted_loss.backward()
         for param in self.parameters():
             param.grad.data.clamp_(-1, 1)
+        # torch.nn.utils.clip_grad_norm_(self.parameters(), 10)
         self.optimizer.step()
         return mean_weighted_loss.item(), pred.detach().numpy()
 

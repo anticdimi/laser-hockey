@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=None, evaluate_on_opposite_side=False):
@@ -10,6 +11,7 @@ def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=No
     touch_stats = {}
     won_stats = {}
     lost_stats = {}
+
     for episode_counter in range(eval_episodes):
         total_reward = 0
         ob = env.reset()

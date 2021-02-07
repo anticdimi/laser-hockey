@@ -79,41 +79,38 @@ class DQNAgent(Agent):
         return action
 
     def train_model(self):
-        losses = []
-        for i in range(self._config['iter_fit']):
-            data = self.buffer.sample(batch_size=self._config['batch_size'])
-            s = np.stack(data[:, 0])  # s_t
-            a = np.stack(data[:, 1])[:, None]  # a_t
-            rew = np.stack(data[:, 2])[:, None]  # r
-            s_next = np.stack(data[:, 3])  # s_t+1
-            not_done = (~np.stack(data[:, 4])[:, None]).astype(np.int)  # not_done flag
+        data = self.buffer.sample(batch_size=self._config['batch_size'])
+        s = np.stack(data[:, 0])  # s_t
+        a = np.stack(data[:, 1])[:, None]  # a_t
+        rew = np.stack(data[:, 2])[:, None]  # r
+        s_next = np.stack(data[:, 3])  # s_t+1
+        not_done = (~np.stack(data[:, 4])[:, None]).astype(np.int)  # not_done flag
 
-            if self._config['double']:
-                greedy_actions = self.Q.greedyAction(s_next)[:, None]
-                value_s_next = self.target_Q.Q_value(s_next, greedy_actions).detach().numpy()
-            else:
-                value_s_next = self.target_Q.maxQ(s_next)[:, None]
+        if self._config['double']:
+            greedy_actions = self.Q.greedyAction(s_next)[:, None]
+            value_s_next = self.target_Q.Q_value(s_next, greedy_actions).detach().numpy()
+        else:
+            value_s_next = self.target_Q.maxQ(s_next)[:, None]
 
-            targets = rew + self._config['discount'] * np.multiply(not_done, value_s_next)
+        targets = rew + self._config['discount'] * np.multiply(not_done, value_s_next)
 
-            if self._config['per']:
-                weights = np.stack(data[:, 5])[:, None]
-                indices = np.stack(data[:, 6])
-            else:
-                weights = np.ones(targets.shape)
+        if self._config['per']:
+            weights = np.stack(data[:, 5])[:, None]
+            indices = np.stack(data[:, 6])
+        else:
+            weights = np.ones(targets.shape)
 
-            # optimize
-            fit_loss, pred = self.Q.fit(s, a, targets, weights)
+        # optimize
+        fit_loss, pred = self.Q.fit(s, a, targets, weights)
 
-            if self._config['per']:
-                priorities = np.abs(targets - pred) + 1e-6
-                self.buffer.update_priorities(indices=indices, priorities=priorities.flatten())
+        if self._config['per']:
+            priorities = np.abs(targets - pred) + 1e-6
+            self.buffer.update_priorities(indices=indices, priorities=priorities.flatten())
 
-            losses.append(fit_loss)
-
-        self.Q.lr_scheduler.step()
-
-        return losses
+        return fit_loss
 
     def update_per_beta(self, beta):
         self.buffer.update_beta(beta=beta)
+
+    def step_lr_scheduler(self):
+        self.Q.lr_scheduler.step()
