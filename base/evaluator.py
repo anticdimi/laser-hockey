@@ -38,7 +38,7 @@ def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=No
                 elif agent._config['mode'] == 'shooting':
                     a1 = [0, 0, 0, 0]
                 else:
-                    raise NotImplementedError(f'Training for {agent._config["mode"]} not implemented.')
+                    a1 = opponent.act(ob)
 
             else:
                 if action_mapping is not None:

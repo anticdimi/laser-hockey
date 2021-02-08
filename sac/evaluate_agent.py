@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from laserhockey import hockey_env as h_env
+from sac_agent import SACAgent
 import os
 import sys
 
@@ -31,12 +32,14 @@ if __name__ == '__main__':
     elif opts.mode == 'defense':
         mode = h_env.HockeyEnv_BasicOpponent.TRAIN_DEFENSE
     else:
-        raise ValueError('Unknown training mode. See --help')
+        raise ValueError('Unknown training mode. See --help.')
 
-    logger = Logger(os.path.dirname(os.path.realpath(__file__)) + '/logs', mode=opts.mode, quiet=opts.q)
-    agent = logger.load_model(opts.filename)
+    if opts.filename is None:
+        raise ValueError('Parameter --filename must be present. See --help.')
+
     env = h_env.HockeyEnv(mode=mode)
 
+    agent = SACAgent.load_model(opts.filename)
     # TODO: refactor
     agent.eval()
     agent._config['show'] = opts.show

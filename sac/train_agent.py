@@ -28,14 +28,16 @@ parser.add_argument('--max_steps', help='Max steps for training', type=int, defa
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--evaluate_every',
                     help='# of episodes between evaluating agent during the training', type=int, default=1000)
-parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.001)
-parser.add_argument('--alpha_lr', help='Learning rate', type=float, default=3e-4)
+parser.add_argument('--add_self_every',
+                    help='# of episodes between adding agent (self) to opponent list', type=int, default=1e5)
+parser.add_argument('--learning_rate', help='Learning rate', type=float, default=1e-3)
+parser.add_argument('--alpha_lr', help='Learning rate', type=float, default=1e-4)
 parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
 parser.add_argument('--lr_milestones', help='Learning rate milestones', nargs='+')
 parser.add_argument('--alpha_milestones', help='Learning rate milestones', nargs='+')
-parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1000)
+parser.add_argument('--update_target_every', help='# of steps between updating target net', type=int, default=1)
 parser.add_argument('--gamma', help='Discount', type=float, default=0.95)
-parser.add_argument('--batch_size', help='batch_size', type=int, default=64)
+parser.add_argument('--batch_size', help='batch_size', type=int, default=128)
 parser.add_argument('--grad_steps', help='grad_steps', type=int, default=32)
 parser.add_argument(
     '--alpha',
@@ -44,6 +46,7 @@ parser.add_argument(
     help='Temperature parameter alpha determines the relative importance of the entropy term against the reward')
 parser.add_argument('--automatic_entropy_tuning', type=bool, default=False,
                     help='Automatically adjust alpha')
+parser.add_argument('--selfplay', type=bool, default=False, help='Should agent train selfplaf')
 parser.add_argument('--soft_tau', help='tau', type=float, default=0.005)
 parser.add_argument('--per', help='Utilize Prioritized Experience Replay', action='store_true')
 parser.add_argument('--per_alpha', help='Alpha for PER', type=float, default=0.6)
@@ -79,17 +82,16 @@ if __name__ == '__main__':
         h_env.BasicOpponent(weak=False),
     ]
 
-    opponent_paths = [
-        # '/Users/dimi/Coding/laser-hockey/sac/logs/10k-alpha/agents/agent.pkl',
-        # '/Users/dimi/Coding/laser-hockey/sac/logs/10k-no-alfa/agents/agent.pkl',
-        # '/Users/dimi/Coding/laser-hockey/sac/logs/15k-self-best-two/agents/a-8000.pkl'
-        # '/Users/dimi/Coding/laser-hockey/sac/logs/15k-self/agents/agent.pkl'
+    pretrained_agents = [
+        # '/Users/dimi/Coding/laser-hockey/sac/210207_151028_954798/agents/a-13000.pkl',
+        # '/Users/dimi/Coding/laser-hockey/sac/210208_094326_681163/agents/agent.pkl'
     ]
 
-    for p in opponent_paths:
-        a = SACAgent.load_model(p)
-        a.eval()
-        opponents.append(a)
+    if opts.selfplay:
+        for p in pretrained_agents:
+            a = SACAgent.load_model(p)
+            a.eval()
+            opponents.append(a)
 
     agent = SACAgent(
         logger=logger,

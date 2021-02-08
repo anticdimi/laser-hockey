@@ -46,12 +46,11 @@ class SACAgent(Agent):
 
         lr_milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
 
-        # TODO: Should different lr's be passed to different nets?
         self.actor = ActorNetwork(
             input_dims=obs_dim,
             learning_rate=self._config['learning_rate'],
             action_space=self.action_space,
-            hidden_sizes=[128, 128],
+            hidden_sizes=[256, 256],
             lr_milestones=lr_milestones,
             lr_factor=self._config['lr_factor'],
             device=self._config['device']
@@ -61,7 +60,7 @@ class SACAgent(Agent):
             input_dim=obs_dim,
             n_actions=4,
             learning_rate=self._config['learning_rate'],
-            hidden_sizes=[128, 128],
+            hidden_sizes=[256, 256],
             lr_milestones=lr_milestones,
             lr_factor=self._config['lr_factor'],
             device=self._config['device']
@@ -71,7 +70,7 @@ class SACAgent(Agent):
             input_dim=obs_dim,
             n_actions=4,
             learning_rate=self._config['learning_rate'],
-            hidden_sizes=[128, 128],
+            hidden_sizes=[256, 256],
             lr_milestones=lr_milestones,
             device=self._config['device']
         )
@@ -80,7 +79,7 @@ class SACAgent(Agent):
 
         if self.automatic_entropy_tuning:
             milestones = [int(x) for x in (self._config['alpha_milestones'][0]).split(' ')]
-            self.target_entropy = -torch.prod(torch.FloatTensor(4).to(self.device)).item()
+            self.target_entropy = -torch.tensor(4).to(self.device)
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
             self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self._config['alpha_lr'])
             self.alpha_scheduler = torch.optim.lr_scheduler.MultiStepLR(
@@ -172,7 +171,7 @@ class SACAgent(Agent):
         qf_loss.backward()
         self.critic.optimizer.step()
 
-        pi, log_pi, mus, sigmas = self.actor.sample(state)
+        pi, log_pi, _, _ = self.actor.sample(state)
 
         qf1_pi, qf2_pi = self.critic(state, pi)
         min_qf_pi = torch.min(qf1_pi, qf2_pi)

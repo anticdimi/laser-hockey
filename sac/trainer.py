@@ -1,6 +1,5 @@
 import numpy as np
 import time
-import copy
 
 from base.evaluator import evaluate
 from sac_agent import SACAgent
@@ -73,6 +72,8 @@ class SACTrainer:
                 )
                 first_time_touch = 1 - touched
 
+                # step_reward = reward - (1 - touched) * 0.1
+
                 total_reward += step_reward
 
                 agent.store_transition((ob, a1, step_reward, next_state, done))
@@ -105,14 +106,15 @@ class SACTrainer:
                 actor_losses.append(losses[2])
                 alpha_losses.append(losses[3])
 
-                # Add good agent to opponents queue
-                if (
-                    episode_counter >= 4000
-                    and grad_updates % 100000 == 0
-                ):
-                    new_opponent = SACAgent.clone_from(agent)
-                    new_opponent.eval()
-                    opponents.append(new_opponent)
+                # Add trained agent to opponents queue
+                if self._config['selfplay']:
+                    if (
+                        episode_counter >= 4000
+                        and grad_updates % self._config['add_self_every'] == 0
+                    ):
+                        new_opponent = SACAgent.clone_from(agent)
+                        new_opponent.eval()
+                        opponents.append(new_opponent)
 
             agent.schedulers_step()
             self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)
