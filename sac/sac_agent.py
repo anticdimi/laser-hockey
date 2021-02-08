@@ -1,8 +1,11 @@
 import sys
 
+import copy
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 import numpy as np
+from pathlib import Path
+import pickle
 
 from base.agent import Agent
 from models import *
@@ -32,6 +35,7 @@ class SACAgent(Agent):
             action_dim=4,
             userconfig=userconfig
         )
+        self.action_space = action_space
         self.device = userconfig['device']
         self.alpha = userconfig['alpha']
         self.automatic_entropy_tuning = self._config['automatic_entropy_tuning']
@@ -42,12 +46,11 @@ class SACAgent(Agent):
 
         lr_milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
 
-        # TODO: Should different lr's be passed to different nets?
         self.actor = ActorNetwork(
             input_dims=obs_dim,
             learning_rate=self._config['learning_rate'],
-            action_space=action_space,
-            hidden_sizes=[128, 128],
+            action_space=self.action_space,
+            hidden_sizes=[256, 256],
             lr_milestones=lr_milestones,
             lr_factor=self._config['lr_factor'],
             device=self._config['device']
@@ -57,7 +60,7 @@ class SACAgent(Agent):
             input_dim=obs_dim,
             n_actions=4,
             learning_rate=self._config['learning_rate'],
-            hidden_sizes=[128, 128],
+            hidden_sizes=[256, 256],
             lr_milestones=lr_milestones,
             lr_factor=self._config['lr_factor'],
             device=self._config['device']
@@ -67,7 +70,7 @@ class SACAgent(Agent):
             input_dim=obs_dim,
             n_actions=4,
             learning_rate=self._config['learning_rate'],
-            hidden_sizes=[128, 128],
+            hidden_sizes=[256, 256],
             lr_milestones=lr_milestones,
             device=self._config['device']
         )
@@ -76,12 +79,31 @@ class SACAgent(Agent):
 
         if self.automatic_entropy_tuning:
             milestones = [int(x) for x in (self._config['alpha_milestones'][0]).split(' ')]
-            self.target_entropy = -torch.prod(torch.FloatTensor(4).to(self.device)).item()
+            self.target_entropy = -torch.tensor(4).to(self.device)
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
-            self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self._config['learning_rate'])
+            self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self._config['alpha_lr'])
             self.alpha_scheduler = torch.optim.lr_scheduler.MultiStepLR(
                 self.alpha_optim, milestones=milestones, gamma=0.5
             )
+
+    @classmethod
+    def clone_from(cls, agent):
+        clone = cls(
+            copy.deepcopy(agent.logger),
+            copy.deepcopy(agent.obs_dim),
+            copy.deepcopy(agent.action_space),
+            copy.deepcopy(agent._config)
+        )
+        clone.critic.load_state_dict(agent.critic.state_dict())
+        clone.critic_target.load_state_dict(agent.critic_target.state_dict())
+        clone.actor.load_state_dict(agent.actor.state_dict())
+
+        return clone
+
+    @staticmethod
+    def load_model(fpath):
+        with open(Path(fpath), 'rb') as inp:
+            return pickle.load(inp)
 
     def eval(self):
         self.eval_mode = True
@@ -149,7 +171,7 @@ class SACAgent(Agent):
         qf_loss.backward()
         self.critic.optimizer.step()
 
-        pi, log_pi, mus, sigmas = self.actor.sample(state)
+        pi, log_pi, _, _ = self.actor.sample(state)
 
         qf1_pi, qf2_pi = self.critic(state, pi)
         min_qf_pi = torch.min(qf1_pi, qf2_pi)

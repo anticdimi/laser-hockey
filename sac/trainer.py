@@ -1,6 +1,8 @@
 import numpy as np
 import time
+
 from base.evaluator import evaluate
+from sac_agent import SACAgent
 from utils import utils
 from laserhockey import hockey_env as h_env
 
@@ -34,6 +36,7 @@ class SACTrainer:
 
         episode_counter = 1
         total_step_counter = 0
+        grad_updates = 0
         while episode_counter <= self._config['max_episodes']:
             ob = env.reset()
             obs_agent2 = env.obs_agent_two()
@@ -69,6 +72,8 @@ class SACTrainer:
                 )
                 first_time_touch = 1 - touched
 
+                # step_reward = reward - (1 - touched) * 0.1
+
                 total_reward += step_reward
 
                 agent.store_transition((ob, a1, step_reward, next_state, done))
@@ -94,11 +99,22 @@ class SACTrainer:
 
             for _ in range(self._config['grad_steps']):
                 losses = agent.update_parameters(total_step_counter)
+                grad_updates += 1
 
                 q1_losses.append(losses[0])
                 q2_losses.append(losses[1])
                 actor_losses.append(losses[2])
                 alpha_losses.append(losses[3])
+
+                # Add trained agent to opponents queue
+                if self._config['selfplay']:
+                    if (
+                        episode_counter >= 4000
+                        and grad_updates % self._config['add_self_every'] == 0
+                    ):
+                        new_opponent = SACAgent.clone_from(agent)
+                        new_opponent.eval()
+                        opponents.append(new_opponent)
 
             agent.schedulers_step()
             self.logger.print_episode_info(env.winner, episode_counter, step, total_reward)

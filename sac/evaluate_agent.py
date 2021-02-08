@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from laserhockey import hockey_env as h_env
+from sac_agent import SACAgent
 import os
 import sys
 
@@ -14,6 +15,7 @@ parser = ArgumentParser()
 
 # Training params
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
+parser.add_argument('--max_steps', help='Set number of steps in an eval episode', type=int, default=250)
 parser.add_argument('--filename', help='Path to the pretrained model', default=None)
 parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | defense)', default='shooting')
 parser.add_argument('--show', help='Set if want to render training process', action='store_true')
@@ -30,13 +32,16 @@ if __name__ == '__main__':
     elif opts.mode == 'defense':
         mode = h_env.HockeyEnv_BasicOpponent.TRAIN_DEFENSE
     else:
-        raise ValueError('Unknown training mode. See --help')
+        raise ValueError('Unknown training mode. See --help.')
 
-    logger = Logger(os.path.dirname(os.path.realpath(__file__)) + '/logs', mode=opts.mode, quiet=opts.q)
-    agent = logger.load_model(opts.filename)
-    # TODO: refactor
-    agent._config['show'] = opts.show
+    if opts.filename is None:
+        raise ValueError('Parameter --filename must be present. See --help.')
+
     env = h_env.HockeyEnv(mode=mode)
+
+    agent = SACAgent.load_model(opts.filename)
+    # TODO: refactor
     agent.eval()
+    agent._config['show'] = opts.show
     opponent = h_env.BasicOpponent(weak=False)
     evaluate(agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
