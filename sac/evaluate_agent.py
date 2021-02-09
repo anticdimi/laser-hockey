@@ -1,9 +1,6 @@
 from argparse import ArgumentParser
 from laserhockey import hockey_env as h_env
 from sac_agent import SACAgent
-import os
-import sys
-
 import sys
 
 sys.path.insert(0, '.')
@@ -21,6 +18,7 @@ parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | d
 parser.add_argument('--show', help='Set if want to render training process', action='store_true')
 parser.add_argument('--q', help='Quiet mode (no prints)', action='store_true')
 parser.add_argument('--opposite', help='Evaluate agent on opposite side', default=False, action='store_true')
+parser.add_argument('--weak', help='Evaluate agent vs weak basic opponent', default=False, action='store_true')
 
 opts = parser.parse_args()
 
@@ -43,5 +41,5 @@ if __name__ == '__main__':
     # TODO: refactor
     agent.eval()
     agent._config['show'] = opts.show
-    opponent = h_env.BasicOpponent(weak=False)
+    opponent = h_env.BasicOpponent(weak=opts.weak)
     evaluate(agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
