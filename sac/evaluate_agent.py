@@ -1,12 +1,6 @@
 from argparse import ArgumentParser
 from laserhockey import hockey_env as h_env
 from sac_agent import SACAgent
-<< << << < HEAD
-== == == =
-import os
-import sys
-
->>>>>> > f3784a0af7d8c0914708aa139706e779358ab827
 import sys
 
 sys.path.insert(0, '.')
@@ -47,9 +41,5 @@ if __name__ == '__main__':
     # TODO: refactor
     agent.eval()
     agent._config['show'] = opts.show
-<< << << < HEAD
-opponent = h_env.BasicOpponent(weak=opts.weak)
-== == == =
-opponent = h_env.BasicOpponent(weak=False)
->>>>>> > f3784a0af7d8c0914708aa139706e779358ab827
-evaluate(agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
+    opponent = h_env.BasicOpponent(weak=opts.weak)
+    evaluate(agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
