@@ -108,7 +108,7 @@ class Logger:
     def plot_running_mean(self, data, title, filename=None, v_milestones=None, show=True):
         data_np = np.asarray(data)
         mean = running_mean(data_np, 100)
-        self._plot(mean, title, v_milestones, filename, show)
+        self._plot(mean, title, filename, v_milestones, show)
 
     def plot_evaluation_stats(self, data, filename):
         style = {
@@ -152,7 +152,7 @@ class Logger:
 
             self._plot(data[key], title, filename, show)
 
-    def _plot(self, data, title, v_milestones=None, filename=None, show=True, ylim=None):
+    def _plot(self, data, title, filename=None, v_milestones=None, show=True, ylim=None):
         plt.figure()
         # Plotting Won vs lost
         if isinstance(data, tuple):
