@@ -105,10 +105,40 @@ class Logger:
             plt.show()
         plt.close()
 
-    def plot_running_mean(self, data, title, filename=None, show=True):
+    def plot_running_mean(self, data, title, filename=None, v_milestones=None, show=True):
         data_np = np.asarray(data)
-        mean = running_mean(data_np, 50)
-        self._plot(mean, title, filename, show)
+        mean = running_mean(data_np, 100)
+        self._plot(mean, title, v_milestones, filename, show)
+
+    def plot_evaluation_stats(self, data, filename):
+        style = {
+            'weak': 'dotted',
+            'strong': 'solid'
+        }
+        for opponent in data.keys():
+            stats = data[opponent]
+            plt.plot(
+                stats['won'],
+                label=f'Won vs {opponent} opponent',
+                color='blue',
+                linestyle=style[opponent]
+            )
+            plt.plot(
+                stats['lost'],
+                label=f'Lost vs {opponent} opponent',
+                color='red',
+                linestyle=style[opponent]
+            )
+
+        plt.ylim((0, 1))
+        plt.title('Evaluation statistics')
+        lgd = plt.legend(bbox_to_anchor=(1.5, 1))
+        plt.savefig(
+            self.plots_prefix_path.joinpath(filename).with_suffix('.pdf'),
+            bbox_extra_artists=(lgd,),
+            bbox_inches='tight'
+        )
+        plt.close()
 
     def plot(self, data, title, filename=None, show=True):
         self._plot(data, title, filename, show)
@@ -122,7 +152,7 @@ class Logger:
 
             self._plot(data[key], title, filename, show)
 
-    def _plot(self, data, title, filename=None, show=True, ylim=None):
+    def _plot(self, data, title, v_milestones=None, filename=None, show=True, ylim=None):
         plt.figure()
         # Plotting Won vs lost
         if isinstance(data, tuple):
@@ -133,6 +163,17 @@ class Logger:
         else:
             plt.plot(data)
         plt.title(title)
+
+        if v_milestones is not None:
+            plt.vlines(
+                v_milestones,
+                linestyles='dashed',
+                colors='orange',
+                label='Added self as opponent',
+                linewidths=0.5,
+                ymin=np.min(data),
+                ymax=np.max(data)
+            )
 
         plt.savefig(self.plots_prefix_path.joinpath(filename).with_suffix('.pdf'))
         if show:
