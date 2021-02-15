@@ -173,8 +173,8 @@ class SACTrainer:
                 data=loss,
                 title=title,
                 filename=f'{title.replace(" ", "-")}.pdf',
+                show=False,
                 v_milestones=new_op_grad,
-                show=False
             )
 
         # Save agent
