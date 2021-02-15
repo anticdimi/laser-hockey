@@ -164,7 +164,7 @@ class SACTrainer:
         self.logger.plot_running_mean(data=rew_stats, title='Total reward', filename='total-reward.pdf', show=False)
 
         # Plot evaluation stats
-        self.logger.plot_evaluation_stats(eval_stats, 'evaluation-won-lost.pdf')
+        self.logger.plot_evaluation_stats(eval_stats, self._config['evaluate_every'], 'evaluation-won-lost.pdf')
 
         # Plot losses
         for loss, title in zip([q1_losses, q2_losses, actor_losses, alpha_losses],

@@ -110,30 +110,36 @@ class Logger:
         mean = running_mean(data_np, 100)
         self._plot(mean, title, filename, show, v_milestones)
 
-    def plot_evaluation_stats(self, data, filename):
+    def plot_evaluation_stats(self, data, eval_freq, filename):
         style = {
             'weak': 'dotted',
             'strong': 'solid'
         }
+
         xlen = 0
         for opponent in data.keys():
             stats = data[opponent]
             xlen = len(stats['won'])
+            x = np.arange(eval_freq, eval_freq * xlen + 1, eval_freq)
             plt.plot(
+                x,
                 stats['won'],
                 label=f'Won vs {opponent} opponent',
                 color='blue',
                 linestyle=style[opponent]
             )
             plt.plot(
+                x,
                 stats['lost'],
                 label=f'Lost vs {opponent} opponent',
                 color='red',
                 linestyle=style[opponent]
             )
 
-        plt.xticks(np.arange(0, xlen * 1000 + 1, 1000), np.arange(0, xlen * 1000 + 1, 1000), rotation=45)
+        ticks = labels = np.arange(eval_freq, eval_freq * xlen + 1, eval_freq)
+        plt.xticks(ticks, labels, rotation=45)
         plt.ylim((0, 1))
+        plt.xlim((eval_freq, xlen * eval_freq))
         plt.title('Evaluation statistics')
         plt.xlabel('Number of training episodes')
         plt.ylabel('Percentage of lost/won games in evaluation')
