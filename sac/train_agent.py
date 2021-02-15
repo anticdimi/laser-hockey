@@ -79,7 +79,6 @@ if __name__ == '__main__':
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
     opponents = [
         h_env.BasicOpponent(weak=False),
-        h_env.BasicOpponent(weak=False),
         h_env.BasicOpponent(weak=True),
     ]
 

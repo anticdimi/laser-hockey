@@ -115,8 +115,10 @@ class Logger:
             'weak': 'dotted',
             'strong': 'solid'
         }
+        xlen = 0
         for opponent in data.keys():
             stats = data[opponent]
+            xlen = len(stats['won'])
             plt.plot(
                 stats['won'],
                 label=f'Won vs {opponent} opponent',
@@ -130,8 +132,12 @@ class Logger:
                 linestyle=style[opponent]
             )
 
+        plt.xticks(np.arange(0, xlen * 1000 + 1, 1000), np.arange(0, xlen * 1000 + 1, 1000), rotation=45)
         plt.ylim((0, 1))
         plt.title('Evaluation statistics')
+        plt.xlabel('Number of training episodes')
+        plt.ylabel('Percentage of lost/won games in evaluation')
+
         lgd = plt.legend(bbox_to_anchor=(1.5, 1))
         plt.savefig(
             self.plots_prefix_path.joinpath(filename).with_suffix('.pdf'),

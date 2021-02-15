@@ -118,3 +118,4 @@ results.csv
 test.py
 *.pkl
 test.py
+.DS_Store
