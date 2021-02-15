@@ -79,12 +79,13 @@ if __name__ == '__main__':
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
     opponents = [
         h_env.BasicOpponent(weak=False),
-        h_env.BasicOpponent(weak=False),
+        h_env.BasicOpponent(weak=True),
     ]
 
+    # Add absolute paths for pretrained agents
     pretrained_agents = [
-        # '/Users/dimi/Coding/laser-hockey/sac/210207_151028_954798/agents/a-13000.pkl',
-        # '/Users/dimi/Coding/laser-hockey/sac/210208_094326_681163/agents/agent.pkl'
+        # '/Users/dimi/Coding/laser-hockey/sac/210208_094326_681163/agents/agent.pkl',
+        # '/Users/dimi/Coding/laser-hockey/sac/210209_084004_925561/agents/agent.pkl'
     ]
 
     if opts.selfplay:
