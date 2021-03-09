@@ -60,6 +60,7 @@ class Logger:
 
         self.agents_prefix_path = self.prefix_path.joinpath('agents')
         self.plots_prefix_path = self.prefix_path.joinpath('plots')
+        self.arrays_prefix_path = self.prefix_path.joinpath('arrays')
 
         self.prefix_path.mkdir(exist_ok=True)
 
@@ -121,8 +122,8 @@ class Logger:
 
     def plot_running_mean(self, data, title, filename=None, show=True, v_milestones=None):
         data_np = np.asarray(data)
-        mean = running_mean(data_np, 100)
-        self._plot(mean, title, filename, show, v_milestones)
+        mean = running_mean(data_np, 1000)
+        self._plot(mean, title, filename, show)
 
     def plot_evaluation_stats(self, data, eval_freq, filename):
         style = {
@@ -207,6 +208,16 @@ class Logger:
 
         plt.close()
 
+    def save_array(self, data, filename):
+        savepath = self.arrays_prefix_path.joinpath(filename).with_suffix('.pkl')
+        with open(savepath, 'wb') as outp:
+            pickle.dump(data, outp, pickle.HIGHEST_PROTOCOL)
+
+    def load_array(self, filename):
+        loadpath = self.arrays_prefix_path.joinpath(filename).with_suffix('.pkl')
+        with open(loadpath, 'rb') as inp:
+            return pickle.load(inp)
+
     # TODO: REMOVE
     def clean_rew_dir(self):
         print("This function will soon be deprecated")
@@ -216,5 +227,7 @@ class Logger:
     def _cleanup(self):
         shutil.rmtree(self.agents_prefix_path, ignore_errors=True)
         shutil.rmtree(self.plots_prefix_path, ignore_errors=True)
+        shutil.rmtree(self.arrays_prefix_path, ignore_errors=True)
         self.agents_prefix_path.mkdir(exist_ok=True)
         self.plots_prefix_path.mkdir(exist_ok=True)
+        self.arrays_prefix_path.mkdir(exist_ok=True)

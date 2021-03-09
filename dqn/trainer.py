@@ -49,7 +49,7 @@ class DQNTrainer:
             'lost': []
         }
 
-        opponents = [h_env.BasicOpponent(weak=False)]
+        opponents = [h_env.BasicOpponent(weak=True)]
 
         opponent = poll_opponent(opponents=opponents)
 
@@ -95,10 +95,9 @@ class DQNTrainer:
                 step_reward = reward + 5 * _info['reward_closeness_to_puck'] - (1 - touched) * 0.1 + \
                               touched * first_time_touch * 0.1 * step
 
-                # step_reward = reward/30 + _info['reward_closeness_to_puck'] / 30 - (1 - touched) * 0.001 + \
-                #               touched * first_time_touch * 0.001 * step
-
                 first_time_touch = 1 - touched
+
+                # step_reward = reward
 
                 total_reward += step_reward
 
@@ -137,7 +136,7 @@ class DQNTrainer:
                 agent.eval()
                 old_show = agent._config['show']
                 agent._config['show'] = False
-                rew, touch, won, lost = evaluate(agent=agent, env=env, opponent=h_env.BasicOpponent(weak=False),
+                rew, touch, won, lost = evaluate(agent=agent, env=env, opponent=h_env.BasicOpponent(weak=True),
                                                  eval_episodes=self._config['eval_episodes'], quiet=True,
                                                  action_mapping=agent.action_mapping)
                 agent.train()
@@ -148,7 +147,6 @@ class DQNTrainer:
                 eval_stats['won'].append(won)
                 eval_stats['lost'].append(lost)
                 self.logger.save_model(agent, f'a-{episode_counter}.pkl')
-
 
             # TODO: COME BACK TO THIS
             if total_step_counter > self._config['start_learning_from']:
@@ -182,3 +180,7 @@ class DQNTrainer:
 
         # Save model
         self.logger.save_model(agent, 'agent.pkl')
+
+        # Save arrays of won-lost stats
+        self.logger.save_array(data=eval_stats["won"], filename="eval-won-stats")
+        self.logger.save_array(data=eval_stats["lost"], filename="eval-lost-stats")

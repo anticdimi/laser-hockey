@@ -13,14 +13,14 @@ for element in itertools.product(*BASIC_MOVEMENT_ACTIONS):
 CUSTOM_DISCRETE_ACTIONS.append((0, 0, 0, 1))  # shooting
 
 DEFAULT_DISCRETE_ACTIONS = [
-    [0, 0, 0, 0],       # stand
-    [-1, 0, 0, 0],      # left
-    [1, 0, 0, 0],       # right
-    [0, -1, 0, 0],      # down
-    [0, 1, 0, 0],       # up
-    [0, 0, -1, 0],      # clockwise
-    [0, 0, 1, 0],       # counter-clockwise
-    [0, 0, 0, 1]        # shoot
+    [0, 0, 0, 0],       # 0 stand
+    [-1, 0, 0, 0],      # 1 left
+    [1, 0, 0, 0],       # 2 right
+    [0, -1, 0, 0],      # 3 down
+    [0, 1, 0, 0],       # 4 up
+    [0, 0, -1, 0],      # 5 clockwise
+    [0, 0, 1, 0],       # 6 counter-clockwise
+    [0, 0, 0, 1]        # 7 shoot
 ]
 
 REDUCED_CUSTOM_DISCRETE_ACTIONS = [

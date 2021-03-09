@@ -30,18 +30,17 @@ class QFeedforward(torch.nn.Module):
         if device.type == 'cuda':
             self.cuda()
 
-        num_hidden_units = 128
-
-        self.fc = torch.nn.Linear(input_size, num_hidden_units)
+        self.fc = torch.nn.Linear(input_size, 256)
 
         if dueling:
-            self.pre_A = torch.nn.Linear(num_hidden_units, num_hidden_units)
-            self.pre_V = torch.nn.Linear(num_hidden_units, num_hidden_units)
+            self.pre_A = torch.nn.Linear(256, 128)
+            self.pre_V = torch.nn.Linear(256, 128)
 
-            self.A = torch.nn.Linear(num_hidden_units, output_size)
-            self.V = torch.nn.Linear(num_hidden_units, 1)
+            self.A = torch.nn.Linear(128, output_size)
+            self.V = torch.nn.Linear(128, 1)
         else:
-            self.Q = torch.nn.Linear(num_hidden_units, self.output_size)
+            self.pre_Q = torch.nn.Linear(256, 128)
+            self.Q = torch.nn.Linear(128, output_size)
 
     def forward(self, x):
         if self.device.type == 'cuda' and x.device.type != 'cuda':
@@ -58,7 +57,8 @@ class QFeedforward(torch.nn.Module):
 
             Q = torch.add(V, (A - A.mean(dim=-1, keepdim=True)))
         else:
-            Q = self.Q(x)
+            pre_Q = torch.nn.functional.relu(self.pre_Q(x))
+            Q = self.Q(pre_Q)
 
         return Q
 
@@ -103,7 +103,7 @@ class QFunction(QFeedforward):
         self.learning_rate = learning_rate
         self.lr_milestones = lr_milestones
         self.lr_factor = lr_factor
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, eps=0.000001)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
             self.optimizer, milestones=lr_milestones, gamma=self.lr_factor
         )
@@ -112,16 +112,16 @@ class QFunction(QFeedforward):
     def fit(self, observations, actions, targets, weights):
         weights = torch.from_numpy(weights).to(self.device).float()
         targets = torch.from_numpy(targets).to(self.device).float()
-        self.optimizer.zero_grad()
         pred = self.Q_value(observations, actions)
         loss = self.loss(pred, targets)
         weighted_loss = loss * weights
         mean_weighted_loss = weighted_loss.mean()
+        self.optimizer.zero_grad()
         mean_weighted_loss.backward()
-        for param in self.parameters():
-            param.grad.data.clamp_(-1, 1)
-        # torch.nn.utils.clip_grad_norm_(self.parameters(), 10)
+        # for param in self.parameters():
+        #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
+
         return mean_weighted_loss.item(), pred.detach().numpy()
 
     def Q_value(self, observations, actions):
