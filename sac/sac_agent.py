@@ -1,14 +1,15 @@
 import sys
 
+import copy
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 import numpy as np
+from pathlib import Path
+import pickle
 
 from base.agent import Agent
 from models import *
-from base import proxy_rewards
 from utils.utils import hard_update, soft_update
-import time
 
 
 class SACAgent(Agent):
@@ -34,6 +35,7 @@ class SACAgent(Agent):
             action_dim=4,
             userconfig=userconfig
         )
+        self.action_space = action_space
         self.device = userconfig['device']
         self.alpha = userconfig['alpha']
         self.automatic_entropy_tuning = self._config['automatic_entropy_tuning']
@@ -44,12 +46,11 @@ class SACAgent(Agent):
 
         lr_milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
 
-        # TODO: Should different lr's be passed to different nets?
         self.actor = ActorNetwork(
             input_dims=obs_dim,
             learning_rate=self._config['learning_rate'],
-            action_space=action_space,
-            hidden_sizes=[128, 128],
+            action_space=self.action_space,
+            hidden_sizes=[256, 256],
             lr_milestones=lr_milestones,
             lr_factor=self._config['lr_factor'],
             device=self._config['device']
@@ -59,7 +60,7 @@ class SACAgent(Agent):
             input_dim=obs_dim,
             n_actions=4,
             learning_rate=self._config['learning_rate'],
-            hidden_sizes=[128, 128],
+            hidden_sizes=[256, 256],
             lr_milestones=lr_milestones,
             lr_factor=self._config['lr_factor'],
             device=self._config['device']
@@ -69,7 +70,7 @@ class SACAgent(Agent):
             input_dim=obs_dim,
             n_actions=4,
             learning_rate=self._config['learning_rate'],
-            hidden_sizes=[128, 128],
+            hidden_sizes=[256, 256],
             lr_milestones=lr_milestones,
             device=self._config['device']
         )
@@ -77,9 +78,32 @@ class SACAgent(Agent):
         hard_update(self.critic_target, self.critic)
 
         if self.automatic_entropy_tuning:
-            self.target_entropy = -torch.prod(torch.FloatTensor(4).to(self.device)).item()
+            milestones = [int(x) for x in (self._config['alpha_milestones'][0]).split(' ')]
+            self.target_entropy = -torch.tensor(4).to(self.device)
             self.log_alpha = torch.zeros(1, requires_grad=True, device=self.device)
-            self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self._config['learning_rate'])
+            self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=self._config['alpha_lr'])
+            self.alpha_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+                self.alpha_optim, milestones=milestones, gamma=0.5
+            )
+
+    @classmethod
+    def clone_from(cls, agent):
+        clone = cls(
+            copy.deepcopy(agent.logger),
+            copy.deepcopy(agent.obs_dim),
+            copy.deepcopy(agent.action_space),
+            copy.deepcopy(agent._config)
+        )
+        clone.critic.load_state_dict(agent.critic.state_dict())
+        clone.critic_target.load_state_dict(agent.critic_target.state_dict())
+        clone.actor.load_state_dict(agent.actor.state_dict())
+
+        return clone
+
+    @staticmethod
+    def load_model(fpath):
+        with open(Path(fpath), 'rb') as inp:
+            return pickle.load(inp)
 
     def eval(self):
         self.eval_mode = True
@@ -91,21 +115,18 @@ class SACAgent(Agent):
         return self._act(obs, True) if self.eval_mode else self._act(obs)
 
     def _act(self, obs, evaluate=False):
-        state = torch.FloatTensor(obs).to(self.actor.device)
+        state = torch.FloatTensor(obs).to(self.actor.device).unsqueeze(0)
         if evaluate is False:
-            action, _, _ = self.actor.sample(state)
+            action, _, _, _ = self.actor.sample(state)
         else:
-            _, _, action = self.actor.sample(state)
-        return action.detach().cpu().numpy()
+            _, _, action, _ = self.actor.sample(state)
+        return action.detach().cpu().numpy()[0]
 
     def schedulers_step(self):
         self.critic.lr_scheduler.step()
         self.actor.lr_scheduler.step()
 
     def update_parameters(self, total_step):
-        if self.buffer.size < self._config['batch_size']:
-            return
-
         data = self.buffer.sample(self._config['batch_size'])
 
         state = torch.FloatTensor(
@@ -134,7 +155,7 @@ class SACAgent(Agent):
         ).squeeze(dim=1)
 
         with torch.no_grad():
-            next_state_action, next_state_log_pi, _ = self.actor.sample(next_state)
+            next_state_action, next_state_log_pi, _, _ = self.actor.sample(next_state)
             q1_next_targ, q2_next_targ = self.critic_target(next_state, next_state_action)
 
             min_qf_next_target = torch.min(q1_next_targ, q2_next_targ) - self.alpha * next_state_log_pi
@@ -150,12 +171,12 @@ class SACAgent(Agent):
         qf_loss.backward()
         self.critic.optimizer.step()
 
-        pi, log_pi, _ = self.actor.sample(state)
+        pi, log_pi, _, _ = self.actor.sample(state)
 
         qf1_pi, qf2_pi = self.critic(state, pi)
         min_qf_pi = torch.min(qf1_pi, qf2_pi)
 
-        policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean()
+        policy_loss = ((self.alpha * log_pi) - min_qf_pi).mean(axis=0)
 
         self.actor.optimizer.zero_grad()
         policy_loss.backward()
@@ -167,6 +188,7 @@ class SACAgent(Agent):
             self.alpha_optim.zero_grad()
             alpha_loss.backward()
             self.alpha_optim.step()
+            self.alpha_scheduler.step()
 
             self.alpha = self.log_alpha.exp()
         else:
@@ -175,4 +197,4 @@ class SACAgent(Agent):
         if total_step % self._config['update_target_every'] == 0:
             soft_update(self.critic_target, self.critic, self._config['soft_tau'])
 
-        return qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item()
+        return (qf1_loss.item(), qf2_loss.item(), policy_loss.item(), alpha_loss.item())

@@ -76,7 +76,7 @@ class ActorNetwork(Feedforward):
         n_actions = 4
 
         self.mu = nn.Linear(hidden_sizes[-1], n_actions)
-        self.sigma = nn.Linear(hidden_sizes[-1], n_actions)
+        self.log_sigma = nn.Linear(hidden_sizes[-1], n_actions)
 
         self.learning_rate = learning_rate
         self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, eps=0.000001)
@@ -102,25 +102,26 @@ class ActorNetwork(Feedforward):
             prob = F.relu(layer(prob))
 
         mu = self.mu(prob)
-        sigma = self.sigma(prob)
-        sigma = torch.clamp(sigma, min=self.reparam_noise, max=1)
+        log_sigma = self.log_sigma(prob)
+        log_sigma = torch.clamp(log_sigma, min=-20, max=10)
 
-        return mu, sigma
+        return mu, log_sigma
 
     def sample(self, state):
-        mu, sigma = self.forward(state)
-        sigma = sigma.exp()
+        mu, log_sigma = self.forward(state)
+        sigma = log_sigma.exp()
         normal = Normal(mu, sigma)
 
-        # For the reparametrization trick
         x = normal.rsample()
         y = torch.tanh(x)
 
+        # Reparametrization
         action = y * self.action_scale + self.action_bias
+
         log_prob = normal.log_prob(x)
 
         log_prob -= torch.log(self.action_scale * (1 - y.pow(2)) + self.reparam_noise)
-        log_prob = log_prob.sum()
+        log_prob = log_prob.sum(axis=1, keepdim=True)
         mu = torch.tanh(mu) * self.action_scale + self.action_bias
 
-        return action, log_prob, mu
+        return action, log_prob, mu, sigma

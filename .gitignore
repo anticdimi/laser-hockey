@@ -109,6 +109,7 @@ venv.bak/
 .DS_store/
 logs/
 ./**/logs/
+/**/21*/
 agents
 
 # custom files
@@ -117,3 +118,4 @@ results.csv
 test.py
 *.pkl
 test.py
+.DS_Store
