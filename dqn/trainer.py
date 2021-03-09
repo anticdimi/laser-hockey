@@ -5,7 +5,6 @@ from base.evaluator import evaluate
 from laserhockey import hockey_env as h_env
 from utils.utils import poll_opponent
 from copy import deepcopy
-from utils.utils import mu_norm, std_norm
 
 
 class DQNTrainer:

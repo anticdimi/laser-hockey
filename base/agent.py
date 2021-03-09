@@ -29,8 +29,8 @@ class Agent(object):
 
         self._config = {
             'discount': 0.95,
-            'buffer_size': int(5e5),
-            'batch_size': 32,
+            'buffer_size': int(1e5),
+            'batch_size': 128,
             'hidden_sizes': [128, 128],
         }
         self._config.update(userconfig)

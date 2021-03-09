@@ -27,7 +27,7 @@ class Feedforward(torch.nn.Module):
 
         layer_sizes = [self.input_size] + self.hidden_sizes
         self.layers = torch.nn.ModuleList([torch.nn.Linear(i, o) for i, o in zip(layer_sizes[:-1], layer_sizes[1:])])
-        self.activations = [torch.nn.ReLU() for l in self.layers]
+        self.activations = [torch.nn.Tanh() for l in self.layers]
 
     def forward(self, x):
         if self.device.type == 'cuda' and x.device.type != 'cuda':

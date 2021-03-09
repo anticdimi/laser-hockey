@@ -48,6 +48,8 @@ parser.add_argument('--per_beta_max', help='Max beta for PER', type=float, defau
 parser.add_argument('--self_play', help='Utilize self play', action='store_true')
 parser.add_argument('--poll_opponent_every', help='Number of episodes betwe1en opponent polls', type=int, default=3_000)
 parser.add_argument('--start_polling_from', help='Episode from which on we start polling', type=int, default=3_000)
+parser.add_argument('--batch_size', help='Batch size', type=int, default=32)
+parser.add_argument('--buffer_size', help='Buffer capacity for the experience replay', type=int, default=int(5e5))
 
 opts = parser.parse_args()
 
