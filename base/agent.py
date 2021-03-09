@@ -41,7 +41,7 @@ class Agent(object):
         if self._config['per']:
             self.buffer = PrioritizedExperienceReplay(max_size=self._config['buffer_size'],
                                                       alpha=self._config['per_alpha'],
-                                                      beta=1 - self._config['epsilon'])
+                                                      beta=self._config['per_beta'])
         else:
             self.buffer = UniformExperienceReplay(max_size=self._config['buffer_size'])
 

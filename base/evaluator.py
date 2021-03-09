@@ -1,5 +1,6 @@
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=None, evaluate_on_opposite_side=False):
@@ -10,6 +11,7 @@ def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=No
     touch_stats = {}
     won_stats = {}
     lost_stats = {}
+
     for episode_counter in range(eval_episodes):
         total_reward = 0
         ob = env.reset()
@@ -29,12 +31,14 @@ def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=No
                 if action_mapping is not None:
                     # DQN act
                     a2 = agent.act(obs_agent2, eps=0)
-                    a2 = action_mapping(a2)
+                    a2 = action_mapping[a2]
                 else:
                     a2 = agent.act(obs_agent2)
 
-                if agent._config['mode'] == 'defense':
+                if agent._config['mode'] in ['defense', 'normal']:
                     a1 = opponent.act(ob)
+                    if not isinstance(a1, np.ndarray):
+                        a1 = action_mapping[a1]
                 elif agent._config['mode'] == 'shooting':
                     a1 = [0, 0, 0, 0]
                 else:
@@ -44,17 +48,19 @@ def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=No
                 if action_mapping is not None:
                     # DQN act
                     a1 = agent.act(ob, eps=0)
-                    a1 = action_mapping(a1)
+                    a1 = action_mapping[a1]
                 else:
                     # SAC act
                     a1 = agent.act(ob)
 
-                if agent._config['mode'] == 'defense':
+                if agent._config['mode'] in ['defense', 'normal']:
                     a2 = opponent.act(obs_agent2)
+                    if not isinstance(a2, np.ndarray):
+                        a2 = action_mapping[a2]
                 elif agent._config['mode'] == 'shooting':
                     a2 = [0, 0, 0, 0]
                 else:
-                    a2 = opponent.act(obs_agent2)
+                    raise NotImplementedError(f'Training for {agent._config["mode"]} not implemented.')
 
             (ob_new, reward, done, _info) = env.step(np.hstack([a1, a2]))
             ob = ob_new
@@ -85,7 +91,8 @@ def evaluate(agent, env, opponent, eval_episodes, quiet=False, action_mapping=No
 
         rew_stats.append(total_reward)
         if not quiet:
-            agent.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon=0)
+            agent.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon=0,
+                                            touched=touch_stats[episode_counter])
 
     if not quiet:
         # Print evaluation stats

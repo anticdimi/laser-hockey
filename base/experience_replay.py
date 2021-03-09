@@ -42,7 +42,8 @@ class UniformExperienceReplay(ExperienceReplay):
     def sample(self, batch_size):
         if batch_size > self.size:
             batch_size = self.size
-        indices = np.random.choice(range(self.size), size=batch_size, replace=False)
+
+        indices = np.random.choice(self.size, size=batch_size, replace=False)
         return self._transitions[indices, :]
 
 

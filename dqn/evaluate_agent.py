@@ -1,8 +1,6 @@
 from argparse import ArgumentParser
 from laserhockey import hockey_env as h_env
 import os
-import sys
-from custom_action_space import custom_discrete_to_continuous_action
 
 import sys
 
@@ -11,13 +9,12 @@ sys.path.insert(1, '..')
 from utils.utils import *
 from base.evaluator import evaluate
 
-
 parser = ArgumentParser()
 
 # Training params
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--filename', help='Path to the pretrained model', default=None)
-parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | defense)', default='defense')
+parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | defense)', default='normal')
 parser.add_argument('--show', help='Set if want to render training process', action='store_true')
 parser.add_argument('--q', help='Quiet mode (no prints)', action='store_true')
 parser.add_argument('--opposite', help='Evaluate agent on opposite side', action='store_true')
@@ -34,11 +31,15 @@ if __name__ == '__main__':
     else:
         raise ValueError('Unknown training mode. See --help')
 
-    logger = Logger(os.path.dirname(os.path.realpath(__file__)) + '/logs', mode=opts.mode, quiet=opts.q)
-    q_agent = logger.load_model(opts.filename)
+    logger = Logger(prefix_path=os.path.dirname(os.path.realpath(__file__)) + '/logs',
+                    mode=opts.mode,
+                    quiet=opts.q)
+    q_agent = logger.load_model(filename=opts.filename)
     # TODO: refactor
     q_agent._config['show'] = opts.show
+    q_agent._config['max_steps'] = 250
     q_agent.eval()
     env = h_env.HockeyEnv(mode=mode)
-    opponent = h_env.BasicOpponent(weak=False)
-    evaluate(q_agent, env, opponent, opts.eval_episodes, evaluate_on_opposite_side=opts.opposite)
+    opponent = h_env.BasicOpponent(weak=True)
+    evaluate(agent=q_agent, env=env, opponent=opponent, eval_episodes=opts.eval_episodes,
+             action_mapping=q_agent.action_mapping, evaluate_on_opposite_side=opts.opposite)

@@ -7,7 +7,7 @@ import numpy as np
 from base.network import Feedforward
 
 
-class QFeedforward(Feedforward):
+class QFeedforward(torch.nn.Module):
     """
     The QFeedforward class implements Dueling architecture of DQN.
 
@@ -24,26 +24,47 @@ class QFeedforward(Feedforward):
     """
 
     def __init__(self, input_size, hidden_sizes, output_size, device, dueling):
-        super().__init__(input_size, hidden_sizes, output_size, device)
+        super(QFeedforward, self).__init__()
         self.dueling = dueling
+        self.device = device
+        if device.type == 'cuda':
+            self.cuda()
+
+        self.fc = torch.nn.Linear(input_size, 256)
 
         if dueling:
-            self.A = torch.nn.Linear(self.hidden_sizes[-1], self.output_size)
-            self.V = torch.nn.Linear(self.hidden_sizes[-1], 1)
+            self.pre_A = torch.nn.Linear(256, 128)
+            self.pre_V = torch.nn.Linear(256, 128)
+
+            self.A = torch.nn.Linear(128, output_size)
+            self.V = torch.nn.Linear(128, 1)
         else:
-            self.Q = torch.nn.Linear(self.hidden_sizes[-1], self.output_size)
+            self.pre_Q = torch.nn.Linear(256, 128)
+            self.Q = torch.nn.Linear(128, output_size)
 
     def forward(self, x):
-        x = super().forward(x)
+        if self.device.type == 'cuda' and x.device.type != 'cuda':
+            x = x.to(self.device)
+
+        x = torch.nn.functional.relu(self.fc(x))
 
         if self.dueling:
-            A = self.A(x)
-            V = self.V(x)
+            pre_A = torch.nn.functional.relu(self.pre_A(x))
+            pre_V = torch.nn.functional.relu(self.pre_V(x))
+
+            A = self.A(pre_A)
+            V = self.V(pre_V)
+
             Q = torch.add(V, (A - A.mean(dim=-1, keepdim=True)))
         else:
-            Q = self.Q(x)
+            pre_Q = torch.nn.functional.relu(self.pre_Q(x))
+            Q = self.Q(pre_Q)
 
         return Q
+
+    def predict(self, x):
+        with torch.no_grad():
+            return self.forward(torch.from_numpy(x.astype(np.float32)).to(self.device)).cpu().numpy()
 
 
 class QFunction(QFeedforward):
@@ -52,7 +73,7 @@ class QFunction(QFeedforward):
 
     Parameters
     ----------
-    observation_dim : int
+    obs_dim : int
         The variable specifies the size of the observation vector.
     action_dim: int
         The variable specifies the size of the action vector.
@@ -70,10 +91,9 @@ class QFunction(QFeedforward):
         The variable specifies
     """
 
-    def __init__(self, observation_dim, action_dim, device, hidden_sizes,
-                 dueling, learning_rate, lr_factor, lr_milestones):
+    def __init__(self, obs_dim, action_dim, device, hidden_sizes, dueling, learning_rate, lr_factor, lr_milestones):
         super().__init__(
-            input_size=observation_dim,
+            input_size=obs_dim,
             hidden_sizes=hidden_sizes,
             output_size=action_dim,
             device=device,
@@ -83,7 +103,7 @@ class QFunction(QFeedforward):
         self.learning_rate = learning_rate
         self.lr_milestones = lr_milestones
         self.lr_factor = lr_factor
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, eps=0.000001)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
             self.optimizer, milestones=lr_milestones, gamma=self.lr_factor
         )
@@ -92,15 +112,16 @@ class QFunction(QFeedforward):
     def fit(self, observations, actions, targets, weights):
         weights = torch.from_numpy(weights).to(self.device).float()
         targets = torch.from_numpy(targets).to(self.device).float()
-        self.optimizer.zero_grad()
         pred = self.Q_value(observations, actions)
         loss = self.loss(pred, targets)
         weighted_loss = loss * weights
         mean_weighted_loss = weighted_loss.mean()
+        self.optimizer.zero_grad()
         mean_weighted_loss.backward()
-        for param in self.parameters():
-            param.grad.data.clamp_(-1, 1)
+        # for param in self.parameters():
+        #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
+
         return mean_weighted_loss.item(), pred.detach().numpy()
 
     def Q_value(self, observations, actions):
