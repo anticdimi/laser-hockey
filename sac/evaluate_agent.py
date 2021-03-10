@@ -38,7 +38,6 @@ if __name__ == '__main__':
     env = h_env.HockeyEnv(mode=mode)
 
     agent = SACAgent.load_model(opts.filename)
-    # TODO: refactor
     agent.eval()
     agent._config['show'] = opts.show
     opponent = h_env.BasicOpponent(weak=opts.weak)

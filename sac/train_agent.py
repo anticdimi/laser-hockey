@@ -2,14 +2,12 @@ import os
 import torch
 from laserhockey import hockey_env as h_env
 from sac_agent import SACAgent
-from importlib import reload
 from argparse import ArgumentParser
 import sys
 from trainer import SACTrainer
 import time
 import random
 
-# TODO: fix if possible, not the best way of importing
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 from utils.utils import *
@@ -78,15 +76,11 @@ if __name__ == '__main__':
 
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
     opponents = [
-        h_env.BasicOpponent(weak=False),
         h_env.BasicOpponent(weak=True),
     ]
 
     # Add absolute paths for pretrained agents
-    pretrained_agents = [
-        # '/Users/dimi/Coding/laser-hockey/sac/210208_094326_681163/agents/agent.pkl',
-        # '/Users/dimi/Coding/laser-hockey/sac/210209_084004_925561/agents/agent.pkl'
-    ]
+    pretrained_agents = []
 
     if opts.selfplay:
         for p in pretrained_agents:

@@ -81,8 +81,6 @@ class SACTrainer:
                 )
                 first_time_touch = 1 - touched
 
-                # step_reward = reward - (1 - touched) * 0.1
-
                 total_reward += step_reward
 
                 agent.store_transition((ob, a1, step_reward, next_state, done))
@@ -131,13 +129,13 @@ class SACTrainer:
 
             if episode_counter % self._config['evaluate_every'] == 0:
                 agent.eval()
-                for eval_op in ['weak', 'strong']:
+                for eval_op in ['weak']:
                     weak = False if eval_op == 'strong' else True
                     rew, touch, won, lost = evaluate(
                         agent,
                         env,
                         h_env.BasicOpponent(weak=weak),
-                        500,
+                        1000,
                         quiet=True
                     )
                     eval_stats[eval_op]['reward'].append(rew)

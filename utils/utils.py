@@ -141,6 +141,8 @@ class Logger:
                 linestyle=style[opponent]
             )
 
+            self.to_csv(stats['won'], f'{opponent}_won')
+
         ticks = labels = np.arange(eval_freq, eval_freq * xlen + 1, eval_freq)
         plt.xticks(ticks, labels, rotation=45)
         plt.ylim((0, 1))
@@ -197,6 +199,10 @@ class Logger:
             plt.show()
 
         plt.close()
+
+    def to_csv(self, data, filename):
+        savepath = self.arrays_prefix_path.joinpath(filename).with_suffix('.csv')
+        np.savetxt(savepath, data, delimiter=',')
 
     def save_array(self, data, filename):
         savepath = self.arrays_prefix_path.joinpath(filename).with_suffix('.pkl')
