@@ -7,6 +7,8 @@ from base.experience_replay import UniformExperienceReplay
 from utils.utils import soft_update
 from laserhockey import hockey_env as h_env
 import torch.nn.functional as F
+from pathlib import Path
+import pickle
 
 sys.path.insert(0, '..')
 
@@ -60,8 +62,8 @@ class DDPGAgent(Agent):
         if self._config['lr_milestones'] is None:
             raise ValueError('lr_milestones argument cannot be None!\nExample: --lr_milestones=100 200 300')
 
-        # lr_milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
-        lr_milestones = self._config['lr_milestones']
+        lr_milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
+
         # Critic
         self.critic = Critic(self._observation_dim, self._action_n,
                              hidden_sizes=self._config['hidden_sizes'],
@@ -118,6 +120,11 @@ class DDPGAgent(Agent):
 
     def store_transition(self, transition):
         self.buffer.add_transition(transition)
+
+    @staticmethod
+    def load_model(fpath):
+        with open(Path(fpath), 'rb') as inp:
+            return pickle.load(inp)
 
     def train(self, total_step_counter, iter_fit=32):
         losses = []
@@ -223,8 +230,8 @@ class TD3Agent(Agent):
         if self._config['lr_milestones'] is None:
             raise ValueError('lr_milestones argument cannot be None!\nExample: --lr_milestones=100 200 300')
 
-        # lr_milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
-        lr_milestones = self._config['lr_milestones']
+        lr_milestones = [int(x) for x in (self._config['lr_milestones'][0]).split(' ')]
+
         # Critics
         self.critics = TwinCritic(self._observation_dim, self._action_n,
                                   hidden_sizes=self._config['hidden_sizes'],
@@ -277,6 +284,11 @@ class TD3Agent(Agent):
 
     def store_transition(self, transition):
         self.buffer.add_transition(transition)
+
+    @staticmethod
+    def load_model(fpath):
+        with open(Path(fpath), 'rb') as inp:
+            return pickle.load(inp)
 
     def train(self, total_step_counter, iter_fit=32):
         losses = []

@@ -4,7 +4,7 @@ import numpy as np
 
 class Actor(torch.nn.Module):
     def __init__(self, num_inputs, n_actions, device, learning_rate, lr_milestones, lr_factor=0.5,
-                 hidden_sizes=[256, 256, 256]):
+                 hidden_sizes=[256, 256]):
         super(Actor, self).__init__()
 
         self.num_inputs = num_inputs
@@ -39,7 +39,7 @@ class Actor(torch.nn.Module):
 
 class Critic(torch.nn.Module):
     def __init__(self, num_inputs, n_actions, device, learning_rate, lr_milestones, lr_factor=0.5,
-                 hidden_sizes=[256, 256, 256]):
+                 hidden_sizes=[256, 256]):
         super(Critic, self).__init__()
 
         self.num_inputs = num_inputs

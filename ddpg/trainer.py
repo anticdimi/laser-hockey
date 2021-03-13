@@ -68,6 +68,7 @@ class DDPGTrainer:
                 touched = max(touched, _info['reward_touch_puck'])
                 current_reward = reward + 5 * _info['reward_closeness_to_puck'] - (
                         1 - touched) * 0.1 + touched * first_time_touch * 0.1 * step
+
                 total_reward += current_reward
 
                 first_time_touch = 1 - touched
@@ -96,7 +97,7 @@ class DDPGTrainer:
 
             if episode_counter % self._config['evaluate_every'] == 0:
                 agent.eval()
-                rew, touch, won, lost = evaluate(agent, env, h_env.BasicOpponent(weak=False),
+                rew, touch, won, lost = evaluate(agent, env, h_env.BasicOpponent(weak=True ),
                                                  self._config['eval_episodes'], quiet=True)
                 agent.train_mode()
 
@@ -106,6 +107,7 @@ class DDPGTrainer:
                 eval_stats['lost'].append(lost)
                 self.logger.save_model(agent, f'a-{episode_counter}.pk l')
                 self.logger.plot_intermediate_stats(eval_stats, show=False)
+
             agent.schedulers_step()
             episode_counter += 1
 
@@ -130,7 +132,7 @@ class DDPGTrainer:
         self.logger.save_model(agent, 'agent.pkl')
 
         # Log rew histograms
-
+        print(eval_stats['won'])
         if eval:
             agent.eval()
             agent._config['show'] = True
