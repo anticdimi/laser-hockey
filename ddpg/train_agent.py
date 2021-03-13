@@ -1,14 +1,15 @@
 import os
 import torch
 from laserhockey import hockey_env as h_env
-from ddpg.agent import DDPGAgent, TD3Agent
 from argparse import ArgumentParser
 import sys
-from ddpg.trainer import DDPGTrainer
-from utils.utils import *
+
 
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
+from ddpg.agent import DDPGAgent, TD3Agent
+from ddpg.trainer import DDPGTrainer
+from utils.utils import *
 
 parser = ArgumentParser()
 parser.add_argument('--dry-run', help='Set if running only for sanity check', action='store_true')

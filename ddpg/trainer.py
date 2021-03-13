@@ -1,9 +1,13 @@
 from collections import defaultdict
 import numpy as np
 import time
-from base.evaluator import evaluate
+import sys
 from utils import utils
 from laserhockey import hockey_env as h_env
+
+sys.path.insert(0, '.')
+sys.path.insert(1, '..')
+from base.evaluator import evaluate
 
 
 class DDPGTrainer:
@@ -22,7 +26,7 @@ class DDPGTrainer:
         self.logger = logger
         self._config = config
 
-    def train(self, agent, opponents,  env, eval):
+    def train(self, agent, opponents, env, eval):
         epsilon = self._config['eps']
         epsilon_decay = self._config['epsilon_decay']
         min_epsilon = self._config['min_epsilon']
@@ -97,7 +101,7 @@ class DDPGTrainer:
 
             if episode_counter % self._config['evaluate_every'] == 0:
                 agent.eval()
-                rew, touch, won, lost = evaluate(agent, env, h_env.BasicOpponent(weak=True ),
+                rew, touch, won, lost = evaluate(agent, env, h_env.BasicOpponent(weak=True),
                                                  self._config['eval_episodes'], quiet=True)
                 agent.train_mode()
 

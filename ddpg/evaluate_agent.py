@@ -2,11 +2,11 @@ from argparse import ArgumentParser
 from laserhockey import hockey_env as h_env
 import os
 import sys
-from utils.utils import *
-from base.evaluator import evaluate
 
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
+from utils.utils import *
+from base.evaluator import evaluate
 
 parser = ArgumentParser()
 
@@ -32,8 +32,8 @@ if __name__ == '__main__':
 
     logger = Logger(os.path.dirname(os.path.realpath(__file__)) + '/logs', mode=opts.mode, quiet=opts.q)
     stats = []
-    for i in range(32000,35001,1000):
-        q_agent = logger.load_model(opts.filename+str(i)+'.pkl')
+    for i in range(32000, 35001, 1000):
+        q_agent = logger.load_model(opts.filename + str(i) + '.pkl')
         q_agent._config['show'] = opts.show
         q_agent._config['max_steps'] = 250
         env = h_env.HockeyEnv(mode=mode)

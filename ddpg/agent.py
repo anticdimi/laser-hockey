@@ -1,16 +1,16 @@
 import sys
 import numpy as np
-from base.agent import Agent
 import torch
-from ddpg.models import Actor, Critic, TwinCritic
-from base.experience_replay import UniformExperienceReplay
-from utils.utils import soft_update
-from laserhockey import hockey_env as h_env
 import torch.nn.functional as F
 from pathlib import Path
 import pickle
 
-sys.path.insert(0, '..')
+sys.path.insert(0, '.')
+sys.path.insert(1, '..')
+from base.agent import Agent
+from ddpg.models import Actor, Critic, TwinCritic
+from base.experience_replay import UniformExperienceReplay
+from utils.utils import soft_update
 
 
 class DDPGAgent(Agent):
