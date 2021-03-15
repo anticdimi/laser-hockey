@@ -71,7 +71,8 @@ class Logger:
         with open(savepath, 'wb') as outp:
             pickle.dump(model, outp, pickle.HIGHEST_PROTOCOL)
 
-    def print_episode_info(self, game_outcome, episode_counter, step, total_reward, epsilon=None, touched=None):
+    def print_episode_info(self, game_outcome, episode_counter, step, total_reward, epsilon=None, touched=None,
+                           opponent=None):
         if not self.quiet:
             padding = 8 if game_outcome == 0 else 0
             msg_string = '{} {:>4}: Done after {:>3} steps. \tReward: {:<15}'.format(
@@ -81,7 +82,10 @@ class Logger:
                 msg_string = '{}Touched: {:<15}'.format(msg_string, int(touched))
 
             if epsilon is not None:
-                msg_string = '{}Epsilon: {:<5}'.format(msg_string, round(epsilon, 2))
+                msg_string = '{}Eps: {:<5}'.format(msg_string, round(epsilon, 2))
+
+            if opponent is not None:
+                msg_string = '{}\tOpp: {}'.format(msg_string, opponent)
 
             print(msg_string)
 

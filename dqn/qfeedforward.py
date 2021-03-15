@@ -30,14 +30,14 @@ class QFeedforward(torch.nn.Module):
         if device.type == 'cuda':
             self.cuda()
 
-        self.fc = torch.nn.Linear(input_size, 256)
+        self.fc = torch.nn.Linear(input_size, 512)
 
         if dueling:
-            self.pre_A = torch.nn.Linear(256, 128)
-            self.pre_V = torch.nn.Linear(256, 128)
+            self.pre_A = torch.nn.Linear(512, 512)
+            self.pre_V = torch.nn.Linear(512, 512)
 
-            self.A = torch.nn.Linear(128, output_size)
-            self.V = torch.nn.Linear(128, 1)
+            self.A = torch.nn.Linear(512, output_size)
+            self.V = torch.nn.Linear(512, 1)
         else:
             self.pre_Q = torch.nn.Linear(256, 128)
             self.Q = torch.nn.Linear(128, output_size)

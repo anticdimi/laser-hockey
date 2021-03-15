@@ -34,7 +34,7 @@ class DQNAgent(Agent):
             action_dim=len(action_mapping),
             userconfig=userconfig
         )
-
+        self.id = 1
         self.action_mapping = action_mapping
 
         lr_milestones = []
@@ -114,3 +114,6 @@ class DQNAgent(Agent):
 
     def step_lr_scheduler(self):
         self.Q.lr_scheduler.step()
+
+    def __str__(self):
+        return f"DQN {self.id}"
