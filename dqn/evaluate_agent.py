@@ -40,6 +40,6 @@ if __name__ == '__main__':
     q_agent._config['max_steps'] = 250
     q_agent.eval()
     env = h_env.HockeyEnv(mode=mode)
-    opponent = h_env.BasicOpponent(weak=True)
+    opponent = h_env.BasicOpponent(weak=False)
     evaluate(agent=q_agent, env=env, opponent=opponent, eval_episodes=opts.eval_episodes,
              action_mapping=q_agent.action_mapping, evaluate_on_opposite_side=opts.opposite)

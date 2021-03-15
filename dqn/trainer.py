@@ -48,17 +48,19 @@ class DQNTrainer:
             'lost': []
         }
 
-        opponents = [h_env.BasicOpponent(weak=True)]
-
-        opponent = poll_opponent(opponents=opponents)
+        opponents = [h_env.BasicOpponent(weak=True), h_env.BasicOpponent(weak=False)]
 
         while episode_counter <= self._config['max_episodes']:
+            if self._config['self_play']:
+                opponent = poll_opponent(opponents=opponents)
+            else:
+                opponent = h_env.BasicOpponent(weak=False)
+
             ob = env.reset()
             obs_agent2 = env.obs_agent_two()
 
             if (env.puck.position[0] < 5 and self._config['mode'] == 'defense') or (
                     env.puck.position[0] > 5 and self._config['mode'] == 'shooting'):
-                # TODO: Remove upper line when teaching to reach towards the ball
                 continue
 
             epsilon = max(epsilon - epsilon_decay, min_epsilon)
@@ -96,8 +98,6 @@ class DQNTrainer:
 
                 first_time_touch = 1 - touched
 
-                # step_reward = reward
-
                 total_reward += step_reward
 
                 agent.store_transition((ob, a1, step_reward, ob_new, done))
@@ -124,18 +124,23 @@ class DQNTrainer:
                     if total_grad_updates % self._config['update_target_every'] == 0:
                         agent.update_target_net()
 
+                    if self._config['self_play'] and total_grad_updates % self._config['add_opponent_every'] == 0 and \
+                            episode_counter >= self._config['start_self_play_from']:
+                        opponents.append(deepcopy(agent))
+                        agent.id += 1
+
                 ob = ob_new
                 obs_agent2 = env.obs_agent_two()
                 total_step_counter += 1
 
-            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon, touched)
+            self.logger.print_episode_info(env.winner, episode_counter, step, total_reward, epsilon, touched, opponent)
 
             if episode_counter % self._config['evaluate_every'] == 0:
                 self.logger.info("Evaluating agent")
                 agent.eval()
                 old_show = agent._config['show']
                 agent._config['show'] = False
-                rew, touch, won, lost = evaluate(agent=agent, env=env, opponent=h_env.BasicOpponent(weak=True),
+                rew, touch, won, lost = evaluate(agent=agent, env=env, opponent=h_env.BasicOpponent(weak=False),
                                                  eval_episodes=self._config['eval_episodes'], quiet=True,
                                                  action_mapping=agent.action_mapping)
                 agent.train()
@@ -147,16 +152,8 @@ class DQNTrainer:
                 eval_stats['lost'].append(lost)
                 self.logger.save_model(agent, f'a-{episode_counter}.pkl')
 
-            # TODO: COME BACK TO THIS
             if total_step_counter > self._config['start_learning_from']:
                 agent.step_lr_scheduler()
-
-            # if self._config['self_play'] and episode_counter >= self._config['max_episodes'] // 2 and \
-            #         episode_counter % self._config['poll_opponent_every'] == 0:
-            if self._config['self_play'] and episode_counter >= self._config['start_polling_from'] and \
-                    episode_counter % self._config['poll_opponent_every'] == 0:
-                opponents.append(deepcopy(agent))
-                opponent = poll_opponent(opponents=opponents)
 
             episode_counter += 1
 
