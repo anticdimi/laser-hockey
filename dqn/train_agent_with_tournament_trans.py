@@ -11,7 +11,6 @@ from copy import deepcopy
 from laserhockey.hockey_env import CENTER_X, CENTER_Y, SCALE
 
 import time
-import random
 
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
