@@ -2,17 +2,16 @@ import os
 import torch
 from laserhockey import hockey_env as h_env
 from sac_agent import SACAgent
-from importlib import reload
 from argparse import ArgumentParser
 import sys
 from trainer import SACTrainer
 import time
 import random
 
-# TODO: fix if possible, not the best way of importing
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 from utils.utils import *
+from base.experience_replay import ExperienceReplay
 
 parser = ArgumentParser()
 parser.add_argument('--dry-run', help='Set if running only for sanity check', action='store_true')
@@ -21,6 +20,8 @@ parser.add_argument('--show', help='Set if want to render training process', act
 parser.add_argument('--q', help='Quiet mode (no prints)', action='store_true')
 parser.add_argument('--evaluate', help='Set if want to evaluate agent after the training', action='store_true')
 parser.add_argument('--mode', help='Mode for training currently: (shooting | defense | normal)', default='defense')
+parser.add_argument('--preload_path', help='Path to the pretrained model', default=None)
+parser.add_argument('--transitions_path', help='Path to the root of folder containing transitions', default=None)
 
 # Training params
 parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=5000)
@@ -29,7 +30,7 @@ parser.add_argument('--eval_episodes', help='Set number of evaluation episodes',
 parser.add_argument('--evaluate_every',
                     help='# of episodes between evaluating agent during the training', type=int, default=1000)
 parser.add_argument('--add_self_every',
-                    help='# of episodes between adding agent (self) to opponent list', type=int, default=1e5)
+                    help='# of gradient updates between adding agent (self) to opponent list', type=int, default=100000)
 parser.add_argument('--learning_rate', help='Learning rate', type=float, default=1e-3)
 parser.add_argument('--alpha_lr', help='Learning rate', type=float, default=1e-4)
 parser.add_argument('--lr_factor', help='Scale learning rate by', type=float, default=0.5)
@@ -52,7 +53,6 @@ parser.add_argument('--per', help='Utilize Prioritized Experience Replay', actio
 parser.add_argument('--per_alpha', help='Alpha for PER', type=float, default=0.6)
 
 opts = parser.parse_args()
-
 
 if __name__ == '__main__':
     if opts.dry_run:
@@ -78,15 +78,11 @@ if __name__ == '__main__':
 
     env = h_env.HockeyEnv(mode=mode, verbose=(not opts.q))
     opponents = [
-        h_env.BasicOpponent(weak=False),
         h_env.BasicOpponent(weak=True),
     ]
 
     # Add absolute paths for pretrained agents
-    pretrained_agents = [
-        # '/Users/dimi/Coding/laser-hockey/sac/210208_094326_681163/agents/agent.pkl',
-        # '/Users/dimi/Coding/laser-hockey/sac/210209_084004_925561/agents/agent.pkl'
-    ]
+    pretrained_agents = []
 
     if opts.selfplay:
         for p in pretrained_agents:
@@ -94,11 +90,19 @@ if __name__ == '__main__':
             a.eval()
             opponents.append(a)
 
-    agent = SACAgent(
-        logger=logger,
-        obs_dim=env.observation_space.shape,
-        action_space=env.action_space,
-        userconfig=vars(opts)
-    )
+    if opts.preload_path is None:
+        agent = SACAgent(
+            logger=logger,
+            obs_dim=env.observation_space.shape,
+            action_space=env.action_space,
+            userconfig=vars(opts)
+        )
+    else:
+        agent = SACAgent.load_model(opts.preload_path)
+        agent.buffer = ExperienceReplay.clone_buffer(agent.buffer, 1000000)
+
+        agent.buffer.preload_transitions(opts.transitions_path)
+        agent.train()
+
     trainer = SACTrainer(logger, vars(opts))
     trainer.train(agent, opponents, env, opts.evaluate)

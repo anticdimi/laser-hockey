@@ -3,7 +3,10 @@ sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 
 import numpy as np
-from base.segment_tree import SumSegmentTree, MinSegmentTree
+from dqn.segment_tree import SumSegmentTree, MinSegmentTree
+from copy import deepcopy
+from utils import utils
+import os
 
 
 class ExperienceReplay:
@@ -22,6 +25,15 @@ class ExperienceReplay:
         self.size = 0
         self.max_size = max_size
 
+    @staticmethod
+    def clone_buffer(new_buffer, maxsize):
+        old_transitions = deepcopy(new_buffer._transitions)
+        buffer = UniformExperienceReplay(max_size=maxsize)
+        for t in old_transitions:
+            buffer.add_transition(t)
+
+        return buffer
+
     def add_transition(self, transitions_new):
         if self.size == 0:
             blank_buffer = [np.asarray(transitions_new, dtype=object)] * self.max_size
@@ -30,6 +42,31 @@ class ExperienceReplay:
         self._transitions[self._current_idx, :] = np.asarray(transitions_new, dtype=object)
         self.size = min(self.size + 1, self.max_size)
         self._current_idx = (self._current_idx + 1) % self.max_size
+
+    def preload_transitions(self, path):
+        for file in os.listdir(path):
+            if file.endswith(".npz"):
+                fpath = os.path.join(path, file)
+
+                with np.load(fpath, allow_pickle=True) as d:
+                    np_data = d['arr_0'].item()
+
+                    if (
+                        # Add a fancy condition
+                        True
+                    ):
+                        transitions = utils.recompute_rewards(np_data, 'Dimitrije_Antic_-_SAC_ЈУГО')
+                        for t in transitions:
+                            tr = (
+                                t[0],
+                                t[1],
+                                float(t[3]),
+                                t[2],
+                                bool(t[4]),
+                            )
+                            self.add_transition(tr)
+
+        print(f'Preloaded data... Buffer size {self.size}.')
 
     def sample(self, batch_size):
         raise NotImplementedError("Implement the sample method")

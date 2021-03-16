@@ -124,3 +124,7 @@ test.py
 *.pkl
 test.py
 .DS_Store
+play.py
+client/
+common/
+*.ipynb
