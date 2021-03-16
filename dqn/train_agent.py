@@ -7,7 +7,6 @@ import sys
 from custom_action_space import DEFAULT_DISCRETE_ACTIONS, REDUCED_CUSTOM_DISCRETE_ACTIONS
 from trainer import DQNTrainer
 
-# TODO: fix if possible, not the best way of importing
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 from utils.utils import *
@@ -20,13 +19,11 @@ parser.add_argument('--q', help='Quiet mode (no prints)', action='store_true')
 parser.add_argument('--mode', help='Mode for training currently: (shooting | defense | normal)', default='normal')
 
 # Training params
-# TODO: ------------------------------------- ARGUMENTS TO LOOK OUT FOR -------------------------------------
 parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=80_000)
 parser.add_argument('--per_beta_inc', help='Beta increment for PER', type=float, default=0.000009)
 parser.add_argument('--self_play', help='Utilize self play', action='store_true')
 parser.add_argument('--start_self_play_from', help='# of episode to start self play from', type=int, default=40_000)
 parser.add_argument('--add_opponent_every', help='# of grad updates until copying ourself', type=int, default=120_000)
-# TODO: -----------------------------------------------------------------------------------------------------
 
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=250)
 parser.add_argument('--start_learning_from', help='# of steps from which on learning happens', type=int, default=50_000)

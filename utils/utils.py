@@ -62,7 +62,6 @@ class Logger:
         if not self.quiet:
             print(f"Running in mode: {mode}")
 
-    # TODO: add logging to file if needed
     def info(self, message):
         print(message)
 
@@ -211,12 +210,6 @@ class Logger:
         loadpath = self.arrays_prefix_path.joinpath(filename).with_suffix('.pkl')
         with open(loadpath, 'rb') as inp:
             return pickle.load(inp)
-
-    # TODO: REMOVE
-    def clean_rew_dir(self):
-        print("This function will soon be deprecated")
-        shutil.rmtree(self.reward_prefix_path, ignore_errors=True)
-        self.reward_prefix_path.mkdir(exist_ok=True)
 
     def _cleanup(self):
         shutil.rmtree(self.agents_prefix_path, ignore_errors=True)

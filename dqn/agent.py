@@ -4,9 +4,7 @@ sys.path.insert(0, '..')
 import copy
 import numpy as np
 from qfeedforward import QFunction
-import time
 from base.agent import Agent
-from base import proxy_rewards
 
 
 class DQNAgent(Agent):
@@ -19,8 +17,6 @@ class DQNAgent(Agent):
         The variable specifies a logger for model management, plotting and printing.
     obs_dim: int
         The variable specifies the dimension of observation space vector.
-    action_dim: int
-        The variable specifies the dimension of action space vector.
     action_mapping: Iterable
         The variable specifies a custom action space
     **userconfig:

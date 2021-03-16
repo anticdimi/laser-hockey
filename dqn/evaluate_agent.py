@@ -35,7 +35,6 @@ if __name__ == '__main__':
                     mode=opts.mode,
                     quiet=opts.q)
     q_agent = logger.load_model(filename=opts.filename)
-    # TODO: refactor
     q_agent._config['show'] = opts.show
     q_agent._config['max_steps'] = 250
     q_agent.eval()
