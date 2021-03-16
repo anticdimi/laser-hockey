@@ -111,9 +111,13 @@ logs/
 ./**/logs/
 /**/21*/
 agents
+dqn/common
+dqn/client
+
 
 # custom files
 *.1
+dqn/client.py
 results.csv
 test.py
 *.pkl
