@@ -116,8 +116,7 @@ class SACTrainer:
                 # Add trained agent to opponents queue
                 if self._config['selfplay']:
                     if (
-                        episode_counter >= 4000
-                        and grad_updates % self._config['add_self_every'] == 0
+                        grad_updates % self._config['add_self_every'] == 0
                     ):
                         new_opponent = SACAgent.clone_from(agent)
                         new_opponent.eval()
@@ -129,13 +128,13 @@ class SACTrainer:
 
             if episode_counter % self._config['evaluate_every'] == 0:
                 agent.eval()
-                for eval_op in ['weak']:
-                    weak = False if eval_op == 'strong' else True
+                for eval_op in ['strong', 'weak']:
+                    ev_opponent = opponents[0] if eval_op == 'strong' else h_env.BasicOpponent(False)
                     rew, touch, won, lost = evaluate(
                         agent,
                         env,
-                        h_env.BasicOpponent(weak=weak),
-                        1000,
+                        ev_opponent,
+                        100,
                         quiet=True
                     )
                     eval_stats[eval_op]['reward'].append(rew)
