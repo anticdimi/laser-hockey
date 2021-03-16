@@ -11,54 +11,11 @@ from copy import deepcopy
 from laserhockey.hockey_env import CENTER_X, CENTER_Y, SCALE
 
 import time
-import random
 
-# TODO: fix if possible, not the best way of importing
 sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 from utils.utils import *
 
-
-def dist_positions(p1, p2):
-    return np.sqrt(np.sum(np.asarray(p1 - p2) ** 2, axis=-1))
-
-def compute_reward_closeness_to_puck(transition):
-    observation = np.asarray(transition[2])
-    reward_closeness_to_puck = 0
-    if (observation[-6] + CENTER_X) < CENTER_X and observation[-4] <= 0:
-        dist_to_puck = dist_positions(observation[:2], observation[-6:-4])
-        max_dist = 250. / SCALE
-        max_reward = -30.  # max (negative) reward through this proxy
-        factor = max_reward / (max_dist * 250 / 2)
-        reward_closeness_to_puck += dist_to_puck * factor  # Proxy reward for being close to puck in the own half
-
-    return reward_closeness_to_puck
-
-def compute_winning_reward(transition, is_player_one):
-    r = 0
-
-    if transition[4]:
-        if transition[5]['winner'] == 0:  # tie
-            r += 0
-        elif transition[5]['winner'] == 1 and is_player_one:  # you won
-            r += 10
-        elif transition[5]['winner'] == -1 and not is_player_one:
-            r += 10
-        else:  # opponent won
-            r -= 10
-    return r
-
-def recompute_rewards(match, username):
-    transitions = match['transitions']
-    is_player_one = match['player_one'] == username
-    new_transitions = []
-    for transition in transitions:
-        new_transition = list(deepcopy(transition))
-        new_transition[3] = compute_winning_reward(transition, is_player_one) + compute_reward_closeness_to_puck(transition)
-        new_transition[5]['reward_closeness_to_puck']
-        new_transitions.append(tuple(new_transition))
-
-    return new_transitions
 
 parser = ArgumentParser()
 parser.add_argument('--dry-run', help='Set if running only for sanity check', action='store_true')
@@ -68,7 +25,6 @@ parser.add_argument('--q', help='Quiet mode (no prints)', action='store_true')
 parser.add_argument('--mode', help='Mode for training currently: (shooting | defense | normal)', default='normal')
 
 # Training params
-# TODO: ------------------------------------- ARGUMENTS TO LOOK OUT FOR -------------------------------------
 parser.add_argument('--max_episodes', help='Max episodes for training', type=int, default=10_000)
 parser.add_argument('--per_beta_inc', help='Beta increment for PER', type=float, default=0.00008)
 parser.add_argument('--self_play', help='Utilize self play', action='store_true')
@@ -76,7 +32,6 @@ parser.add_argument('--start_self_play_from', help='# of episode to start self p
 parser.add_argument('--epsilon', help='Epsilon', type=float, default=0.1)
 parser.add_argument('--learning_rate', help='Learning rate', type=float, default=0.00005) 
 parser.add_argument('--add_opponent_every', help='# of grad updates until copying ourself', type=int, default=50_000)
-# TODO: -----------------------------------------------------------------------------------------------------
 
 parser.add_argument('--max_steps', help='Max steps for training', type=int, default=250)
 parser.add_argument('--start_learning_from', help='# of steps from which on learning happens', type=int, default=1)

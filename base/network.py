@@ -12,6 +12,8 @@ class Feedforward(torch.nn.Module):
         The variable specifies the input shape of the network.
     hidden_sizes: list
         The variable specifies the width of the hidden layers.
+    output_size : int
+        The variable specifies the output shape of the network.
     device: torch.device
         The variable specifies on which device the network is evaluated.
     """

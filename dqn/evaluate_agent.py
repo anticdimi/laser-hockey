@@ -11,7 +11,7 @@ from base.evaluator import evaluate
 
 parser = ArgumentParser()
 
-# Training params
+# Evaluation params
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--filename', help='Path to the pretrained model', default=None)
 parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | defense)', default='normal')
@@ -35,7 +35,6 @@ if __name__ == '__main__':
                     mode=opts.mode,
                     quiet=opts.q)
     q_agent = logger.load_model(filename=opts.filename)
-    # TODO: refactor
     q_agent._config['show'] = opts.show
     q_agent._config['max_steps'] = 250
     q_agent.eval()

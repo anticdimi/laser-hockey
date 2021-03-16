@@ -4,7 +4,6 @@ sys.path.insert(1, '..')
 
 import torch
 import numpy as np
-from base.network import Feedforward
 
 
 class QFeedforward(torch.nn.Module):
@@ -17,6 +16,8 @@ class QFeedforward(torch.nn.Module):
         The variable specifies the input shape of the network.
     hidden_sizes: list
         The variable specifies the width of the hidden layers.
+    output_size : int
+        The variable specifies the output shape of the network.
     device: torch.device
         The variable specifies on which device the network is evaluated.
     dueling: bool
@@ -77,18 +78,18 @@ class QFunction(QFeedforward):
         The variable specifies the size of the observation vector.
     action_dim: int
         The variable specifies the size of the action vector.
-    hidden_sizes: list
-        The variable specifies the width of the hidden layers.
     device: torch.device
         The variable specifies on which device the network is evaluated.
+    hidden_sizes: list
+        The variable specifies the width of the hidden layers.
     dueling: bool
         The variable specifies whether or not the architecture should implement a Dueling DQN.
     learning_rate: float
-        The variable specifies the learning rate for neural net.
+        The variable specifies the learning rate for the neural net.
     lr_factor: float
-        The variable specifies the learning rate scaling factor for neural net.
+        The variable specifies the learning rate scaling factor for the neural net.
     lr_milestones: Iterable
-        The variable specifies
+        The variable specifies the milestones at which we perform learning rate factoring
     """
 
     def __init__(self, obs_dim, action_dim, device, hidden_sizes, dueling, learning_rate, lr_factor, lr_milestones):
