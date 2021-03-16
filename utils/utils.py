@@ -25,7 +25,6 @@ def hard_update(target, source):
 
 
 def poll_opponent(opponents):
-    # TODO: Implement smarter polling
     return random.choice(opponents)
 
 

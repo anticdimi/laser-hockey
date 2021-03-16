@@ -3,7 +3,7 @@ sys.path.insert(0, '.')
 sys.path.insert(1, '..')
 
 import numpy as np
-from dqn.segment_tree import SumSegmentTree, MinSegmentTree
+from base.segment_tree import SumSegmentTree, MinSegmentTree
 
 
 class ExperienceReplay:
