@@ -6,10 +6,6 @@ from argparse import ArgumentParser
 import sys
 from custom_action_space import DEFAULT_DISCRETE_ACTIONS, REDUCED_CUSTOM_DISCRETE_ACTIONS
 from trainer import DQNTrainer
-
-from copy import deepcopy
-from laserhockey.hockey_env import CENTER_X, CENTER_Y, SCALE
-
 import time
 
 sys.path.insert(0, '.')
@@ -96,7 +92,9 @@ if __name__ == '__main__':
         userconfig=vars(opts)
     )
 
-    with open(f"210316_051533_670487/agents/agent.pkl", 'rb') as inp:
+    best_model = "210316_051533_670487/agents/agent.pkl"
+
+    with open(best_model, 'rb') as inp:
         q_agent = pickle.load(inp)
 
     q_agent.train()
@@ -119,14 +117,13 @@ if __name__ == '__main__':
                             np_data['player_one'] == 'Zafir_Stojanovski_-_Dueling_DQN_ЈУГО'
                             and np_data['player_two'] != 'StrongBasicOpponent'
                             and np_data['player_two'] != 'WeakBasicOpponent'
-                            # and np_data['player_two'] != 'Dimitrije_Antic_-_SAC_ЈУГО'
                     ):
                         transitions = recompute_rewards(np_data, 'Zafir_Stojanovski_-_Dueling_DQN_ЈУГО')
                         for t in transitions:
                             try:
                                 tr = (
                                     t[0],
-                                    REDUCED_CUSTOM_DISCRETE_ACTIONS.index(t[1]),
+                                    action_mapping.index(t[1]),
                                     float(t[3]),
                                     t[2],
                                     bool(t[4]),
