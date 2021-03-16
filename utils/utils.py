@@ -5,6 +5,8 @@ import pickle
 import shutil
 from tabulate import tabulate
 import random
+from copy import deepcopy
+from laserhockey.hockey_env import CENTER_X, CENTER_Y, SCALE
 
 
 def running_mean(x, N):
@@ -27,6 +29,52 @@ def hard_update(target, source):
 def poll_opponent(opponents):
     # TODO: Implement smarter polling
     return random.choice(opponents)
+
+
+def dist_positions(p1, p2):
+    return np.sqrt(np.sum(np.asarray(p1 - p2) ** 2, axis=-1))
+
+
+def compute_reward_closeness_to_puck(transition):
+    observation = np.asarray(transition[2])
+    reward_closeness_to_puck = 0
+    if (observation[-6] + CENTER_X) < CENTER_X and observation[-4] <= 0:
+        dist_to_puck = dist_positions(observation[:2], observation[-6:-4])
+        max_dist = 250. / SCALE
+        max_reward = -30.  # max (negative) reward through this proxy
+        factor = max_reward / (max_dist * 250 / 2)
+        reward_closeness_to_puck += dist_to_puck * factor  # Proxy reward for being close to puck in the own half
+
+    return reward_closeness_to_puck
+
+
+def compute_winning_reward(transition, is_player_one):
+    r = 0
+
+    if transition[4]:
+        if transition[5]['winner'] == 0:  # tie
+            r += 0
+        elif transition[5]['winner'] == 1 and is_player_one:  # you won
+            r += 10
+        elif transition[5]['winner'] == -1 and not is_player_one:
+            r += 10
+        else:  # opponent won
+            r -= 10
+    return r
+
+
+def recompute_rewards(match, username):
+    transitions = match['transitions']
+    is_player_one = match['player_one'] == username
+    new_transitions = []
+    for transition in transitions:
+        new_transition = list(deepcopy(transition))
+        new_transition[3] = compute_winning_reward(transition, is_player_one) + \
+            compute_reward_closeness_to_puck(transition)
+        new_transition[5]['reward_closeness_to_puck']
+        new_transitions.append(tuple(new_transition))
+
+    return new_transitions
 
 
 class Logger:
@@ -145,6 +193,8 @@ class Logger:
                 linestyle=style[opponent]
             )
 
+            self.to_csv(stats['won'], f'{opponent}_won')
+
         ticks = labels = np.arange(eval_freq, eval_freq * xlen + 1, eval_freq)
         plt.xticks(ticks, labels, rotation=45)
         plt.ylim((0, 1))
@@ -201,6 +251,10 @@ class Logger:
             plt.show()
 
         plt.close()
+
+    def to_csv(self, data, filename):
+        savepath = self.arrays_prefix_path.joinpath(filename).with_suffix('.csv')
+        np.savetxt(savepath, data, delimiter=',')
 
     def save_array(self, data, filename):
         savepath = self.arrays_prefix_path.joinpath(filename).with_suffix('.pkl')
