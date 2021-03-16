@@ -11,7 +11,7 @@ from base.evaluator import evaluate
 
 parser = ArgumentParser()
 
-# Training params
+# Evaluation params
 parser.add_argument('--eval_episodes', help='Set number of evaluation episodes', type=int, default=30)
 parser.add_argument('--filename', help='Path to the pretrained model', default=None)
 parser.add_argument('--mode', help='Mode for evaluating currently: (shooting | defense)', default='normal')
