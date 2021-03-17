@@ -25,7 +25,7 @@ can be found [here](http://al-hockey.is.tuebingen.mpg.de/).
 
 We presented both discrete and continuous action-space solutions for this problem. In particular, these are the 
 algorithms that each of the authors have implemented:
-1. **Dueling DQN with Prioretized Experience Replay** ([Zafir Stojanovski](https://github.com/zafir-stojanovski))
+1. **Dueling DQN with Prioritized Experience Replay** ([Zafir Stojanovski](https://github.com/zafir-stojanovski))
 2. **Soft Actor-Critic** ([Dimitrije Antic](https://github.com/antic11d))
 3. **Deep Deterministic Policy Gradient** ([Jovan Cicvaric](https://github.com/cile98))
 
