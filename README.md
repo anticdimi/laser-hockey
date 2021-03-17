@@ -9,16 +9,18 @@ Laser Hockey is a custom environment built using the [Open AI gym](https://gym.o
 essentially a two player hockey game, in which the agents compete to score a goal against each other. 
 Although seemingly simple, the environment encapsulates a lot of complexities and hardships under the hood.
 
+![Laser hockey gameplay](src/zafir-stojanovski-gameplay.gif)
+
 Is reinforcement learning truly needed to find an optimal policy for playing the game? The answer to this question is in 
 fact revealed by our project solution. In short, yes. We demonstrated that our trained reinforcement learning agents 
 easily manage to defeat the algorithmic basic opponent provided by the environment. 
 
-Moreover, the teacher and TAs organized a **tournament** between the participants of the course, which consisted of two 
-phases:
-1. A 24-hour regular phase that included 70+ entries
+Moreover, **our solution was the winning entry in the tournament** between all trained agents from the participants. 
+This tournament consisted of two phases:
+1. A regular phase that included 70+ entries
 2. A play-off phase that included only the top 10 teams from the regular session
 
-In both the phases, **our solution ranked first**. The leaderboard with the final results from the play-off phase 
+The leaderboard with the final results from the play-off phase 
 can be found [here](http://al-hockey.is.tuebingen.mpg.de/).
 
 We presented both discrete and continuous action-space solutions for this problem. In particular, these are the 
@@ -26,3 +28,7 @@ algorithms that each of the authors have implemented:
 1. **Dueling DQN with Prioretized Experience Replay** ([Zafir Stojanovski](https://github.com/zafir-stojanovski))
 2. **Soft Actor-Critic** ([Dimitrije Antic](https://github.com/antic11d))
 3. **Deep Deterministic Policy Gradient** ([Jovan Cicvaric](https://github.com/cile98))
+
+**An extensive report** containing detailed algorithm descriptions, ablation/sensitivity studies on the model's 
+hyperparameters, and tricks that played an important role in helping us win the challenge could be found 
+[here](https://github.com/antic11d/laser-hockey/tree/main/RL_project_report.pdf).
