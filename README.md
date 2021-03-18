@@ -21,7 +21,8 @@ This tournament consisted of two phases:
 2. A play-off phase that included only the top 10 teams from the regular session
 
 The leaderboard with the final results from the play-off phase 
-can be found [here](http://al-hockey.is.tuebingen.mpg.de/).
+can be found [here](http://al-hockey.is.tuebingen.mpg.de/). Furthermore, the certificate for winning the competition 
+can be found [here](assets/Certificate_1st-Place.pdf).
 
 We presented both discrete and continuous action-space solutions for this problem. In particular, these are the 
 algorithms that each of the authors have implemented:
@@ -31,4 +32,4 @@ algorithms that each of the authors have implemented:
 
 **An extensive report** containing detailed algorithm descriptions, ablation/sensitivity studies on the model's 
 hyperparameters, and tricks that played an important role in helping us win the challenge could be found 
-[here](https://github.com/antic11d/laser-hockey/tree/main/assets/RL_project_report.pdf).
+[here](assets/RL_project_report.pdf).
